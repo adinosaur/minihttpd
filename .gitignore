@@ -26,3 +26,9 @@
 *.exe
 *.out
 *.app
+
+# gedit tmp file
+*~
+
+# core
+core
