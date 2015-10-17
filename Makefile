@@ -8,6 +8,7 @@ all:
 tst:
 	$(CC) --std=c++11 -Wall -g ./test/test_http_request.cc -o ./build/test1.out
 	$(CC) --std=c++11 -Wall -g ./test/test_http_response.cc -o ./build/test2.out
+	$(CC) --std=c++11 -Wall -g ./test/test_logger.cc -o ./build/test3.out
 
 clean:
 	rm ./build/*

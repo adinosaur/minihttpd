@@ -48,7 +48,7 @@ class Helper
                     c = '\n';
             }
             buf[i] = '\0';
-            return(i);
+            return i;
         }
 };
 

@@ -11,6 +11,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <iostream>
 
 using std::string;
 
@@ -129,6 +130,51 @@ class HttpRequest : public HttpBase
             if (it != _headers.end())
                 result = it->second;
             return result;
+        }
+        
+        void print(std::ostream& os)
+        {
+            os << ">";
+            
+            switch(_method)
+            {
+                case METHOD_GET:
+                    os << "GET";
+                    break;
+                
+                case METHOD_POST:
+                    os << "POST";
+                    break;
+            }
+            
+            os << " " << _path << _query;
+            os << " ";
+            
+            switch(_version)
+            {
+                case HTTPV_09:
+                    os << "HTTP/0.9";
+                    break;
+                case HTTPV_10:
+                    os << "HTTP/1.0";
+                    break;
+                case HTTPV_11:
+                    os << "HTTP/1.1";
+                    break;
+                case HTTPV_20:
+                    os << "HTTP/2.0";
+                    break;
+            }
+            
+            os << "\r\n";
+            
+            for (auto& header : _headers)
+            {
+                os << ">";
+                os << header.first << ": " << header.second << "\r\n";
+            }
+            
+            os << std::endl;
         }
         
     private:

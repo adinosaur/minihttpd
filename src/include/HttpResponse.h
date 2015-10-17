@@ -11,6 +11,7 @@
 #include <string>
 #include <map>
 #include <algorithm>
+#include <iostream>
 
 using std::string;
 
@@ -113,6 +114,33 @@ class HttpResponse : public HttpBase
             response += _body;
             
             return response;
+        }
+        
+        void print(std::ostream& os)
+        {
+            string response = to_string();
+            
+            auto beg = response.begin();
+            auto cur = beg;
+            auto end = response.end();
+            
+            for (; cur != end; ++cur)
+            {
+                if (*cur == '\r' && *(cur+1) == '\n')
+                {
+                    os << "<";
+                    os << string(beg, cur+2);
+                    
+                    // "\r\n\r\n" meaning headers end.
+                    if (beg == cur)
+                        break;
+                    else
+                        beg = cur+2;
+                }
+            }
+
+            os << "<" << string(cur+2, end);
+            os << std::endl;
         }
         
     private:

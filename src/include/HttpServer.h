@@ -10,6 +10,7 @@
 #include "HttpRequest.h"
 #include "HttpResponse.h"
 #include "Helper.h"
+#include "Logger.h"
 
 #include <unistd.h>
 #include <assert.h>
@@ -20,6 +21,8 @@
 #include <vector>
 
 using std::string;
+
+#define DEFAULT_HTTP_ROOT_DIR "/var/www"
 
 class HttpServer
 {
@@ -44,12 +47,34 @@ class HttpServer
         void serve_file()
         {
             char buf[1024];
-            std::ifstream f(_http_request.get_path());
+            std::ifstream f(HttpServer::_http_root_dir + _http_request.get_path());
             
             if (f)
             {
+                string suffix;
+                
+                // get suffix name
+                string path = _http_request.get_path();
+                int i = path.size() - 1;
+                while (path[i] != '.' && path[i] != '/')
+                    i--;
+                
+                string content_type;
+                if (path[i] == '/')
+                    content_type = "text/plain";
+                if (path[i] == '.')
+                {
+                    suffix = path.substr(i);
+                    
+                    auto it = HttpResponse::content_type_map.find(suffix);
+                    if (it != HttpResponse::content_type_map.end())
+                        content_type = it->second;
+                    else
+                        content_type = "text/plain";
+                }
+                
                 _http_response.set_status_code(200);
-                _http_response.add_header("Content-Type", "text/plain");
+                _http_response.add_header("Content-Type", content_type);
                 
                 while (1)
                 {
@@ -59,10 +84,14 @@ class HttpServer
                     _http_response.append_to_body(buf, buf + f.gcount());
                 }
                 
+                TRACE_LOG.logging("TRACE", "SERVE-FILE", _http_request.get_path(), "SUFFIX", suffix);
                 _response_flag = true;
             }
             else
+            {
                 not_found();
+                TRACE_LOG.logging("TRACE", "SERVE-FILE", "FILE-NOT-FOUND");
+            }
         }
         
         //
@@ -146,16 +175,15 @@ class HttpServer
         void accept_request()
         {
             char buf[1024];
+            int n;
             
             //pthread_detach(pthread_self());
             
             // read http request line.
-            Helper::get_line(_connfd, buf, sizeof(buf));
-            
-            HttpRequest _http_request;
+            n = Helper::get_line(_connfd, buf, sizeof(buf));
             
             char* beg = buf;
-            char* end = beg + sizeof(buf);
+            char* end = beg + n;
             char* cur = beg;
             
             // set HTTP request line.
@@ -197,12 +225,21 @@ class HttpServer
                 cur++;
             
             // set HTTP request headers.
-            while (cur < end)
+            while (true)
             {
-                beg = cur;
+                n = Helper::get_line(_connfd, buf, sizeof(buf));
+                
+                beg = buf;
+                end = beg + n;
+                cur = beg;
+
                 while (cur < end && (*cur) != '\n')
                     cur++;
-                _http_request.add_header(beg, cur);
+                
+                if (beg != cur)
+                    _http_request.add_header(beg, cur);
+                else
+                    break;
             
                 // skip over space.
                 while (cur < end && isspace(*cur))
@@ -210,6 +247,7 @@ class HttpServer
             }
             
             _request_flag = true;
+            _http_request.print(std::cout);
         }
         
         //
@@ -227,9 +265,6 @@ class HttpServer
             }
             else 
             {
-                std::string file("/var/www");
-                std::string query;
-                
                 if (_http_request.get_method() == HttpResponse::METHOD_POST ||
                     !_http_request.get_query().empty())
                     cgi = true;
@@ -247,7 +282,19 @@ class HttpServer
                 }
             }
         }
+        
+        //
+        // send response
+        //
+        void send_response()
+        {
+            string buf = _http_response.to_string();
+            write(_connfd, buf.data(), buf.size());
+            _http_response.print(std::cout);
+        }
     private:
+        static string _http_root_dir;
+        
         int _connfd;
         
         bool _request_flag;
@@ -256,6 +303,8 @@ class HttpServer
         HttpRequest _http_request;
         HttpResponse _http_response;
 };
+
+string HttpServer::_http_root_dir(DEFAULT_HTTP_ROOT_DIR);
 
 #endif
 

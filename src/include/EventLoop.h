@@ -7,11 +7,15 @@
 #define MINIHTTPD_EVENTLOOP_H
 
 #include "HttpServer.h"
+#include "Logger.h"
 
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <time.h>
+
+#include <iostream>
 
 class EventLoop : public NonCopyable
 {
@@ -33,6 +37,8 @@ class EventLoop : public NonCopyable
         //
         void loop()
         {
+            char client_addr[32];
+            
             while (1)
             {
                 struct sockaddr_in cliaddr;
@@ -46,9 +52,15 @@ class EventLoop : public NonCopyable
                 
                 //if (pthread_create(&pid, NULL, accept_request, &connfd) != 0)
                 //    perror("pthread_create error...");
+                
+                // logger.
+                inet_ntop(AF_INET, &cliaddr.sin_addr, client_addr, sizeof(client_addr));
+                TRACE_LOG.logging("TRACE", "NEW-CONNECTION", client_addr, ntohs(cliaddr.sin_port), connfd);
+                
                 HttpServer http(connfd);
                 http.accept_request();
                 http.handle_request();
+                http.send_response();
             }
         }
         
