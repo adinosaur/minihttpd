@@ -20,14 +20,17 @@
 #include <vector>
 #include <memory>
 
-template <typename HTTP>
+//
+// 静多态
+//
+template <typename Protocol, typename IOMulti = Epoll>
 class EventLoop
 {
     public:
         explicit EventLoop(uint32_t port):
             _port(port),
             _sockfd(setup(_port)),
-            _io_multi(new Select),
+            _iomulti(IOMulti()),
             _active_channel_list()
         {
         }
@@ -35,7 +38,6 @@ class EventLoop
         ~EventLoop()
         {
             close(_sockfd);
-            delete _io_multi;
         }
         
         // 禁止copy
@@ -80,27 +82,28 @@ class EventLoop
                 connect_channel->set_enable_reading();
                 connect_channel->set_read_callback([=]()
                 {
-                    HTTP http(connfd);
-                    http.accept_request();
-                    http.handle_request();
-                    http.send_response();
+                    Protocol protocol(connfd);
                     
-                    _io_multi->del_channel(connfd);
+                    protocol.accept_request();
+                    protocol.handle_request();
+                    protocol.send_response();
+                    
+                    _iomulti.del_channel(connfd);
                     delete connect_channel;
                 });
                 
-                // 最后将其添加至_io_multi->ChannelMap
-                _io_multi->add_channel(connfd, connect_channel);
+                // 最后将其添加至_iomulti.ChannelMap
+                _iomulti.add_channel(connfd, connect_channel);
             });
             
-            // 添加至_io_multi->ChannelMap.
-            _io_multi->add_channel(_sockfd, &listen_channel);
+            // 添加至_iomulti.ChannelMap.
+            _iomulti.add_channel(_sockfd, &listen_channel);
             
             while (1)
             {
                 // IO复用
                 // 通过IO复用获取到IO事件
-                _io_multi->loop(_active_channel_list);
+                _iomulti.loop(_active_channel_list);
                 
                 // swap技法清空vector
                 std::vector<Channel*> channel_list;
@@ -155,7 +158,7 @@ class EventLoop
         uint32_t _port;
         int _sockfd;
         
-        IOMultiplexing* _io_multi;
+        IOMulti _iomulti;
         std::vector<Channel*> _active_channel_list;
 };
 
