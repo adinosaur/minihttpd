@@ -3,14 +3,14 @@
 // Author: Dinosaur W.
 //
 
-#ifndef MINIHTTPD_HTTPSERVER_H
-#define MINIHTTPD_HTTPSERVER_H
+#ifndef MINIHTTPD_HTTP_H
+#define MINIHTTPD_HTTP_H
 
-#include "Noncopyable.h"
+#include "../Logger/Logger.h"
+#include "../Noncopyable.h"
+#include "../Helper.h"
 #include "HttpRequest.h"
 #include "HttpResponse.h"
-#include "Helper.h"
-#include "Logger.h"
 
 #include <unistd.h>
 #include <assert.h>
@@ -24,10 +24,10 @@ using std::string;
 
 #define DEFAULT_HTTP_ROOT_DIR "/var/www"
 
-class HttpServer
+class Http
 {
     public:
-        HttpServer(int connfd):
+        Http(int connfd):
             _connfd(connfd),
             _request_flag(false),
             _response_flag(false),
@@ -36,7 +36,7 @@ class HttpServer
         {
         }
         
-        ~HttpServer()
+        ~Http()
         {
             close(_connfd);
         }
@@ -47,7 +47,7 @@ class HttpServer
         void serve_file()
         {
             char buf[1024];
-            std::ifstream f(HttpServer::_http_root_dir + _http_request.get_path());
+            std::ifstream f(Http::_http_root_dir + _http_request.get_path());
             
             if (f)
             {
@@ -177,8 +177,6 @@ class HttpServer
             char buf[1024];
             int n;
             
-            //pthread_detach(pthread_self());
-            
             // read http request line.
             n = Helper::get_line(_connfd, buf, sizeof(buf));
             
@@ -304,7 +302,7 @@ class HttpServer
         HttpResponse _http_response;
 };
 
-string HttpServer::_http_root_dir(DEFAULT_HTTP_ROOT_DIR);
+string Http::_http_root_dir(DEFAULT_HTTP_ROOT_DIR);
 
 #endif
 

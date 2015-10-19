@@ -8,16 +8,9 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <stdlib.h>
 
 #include <string>
 #include <iostream>
-
-void perror(const std::string& error_msg)
-{
-    std::cerr << error_msg << "\n";
-    exit(1);
-}
 
 class Helper
 {

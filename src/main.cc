@@ -3,11 +3,12 @@
 // Author: Dinosaur W.
 //
 
-#include "include/EventLoop.h"
+#include "../include/EventLoop/EventLoop.h"
+#include "../include/Http/Http.h"
 
 int main()
 {
-    EventLoop loop(8080);
-    loop.loop();
+    EventLoop<Http> httpServer(8080);
+    httpServer.loop();
     return 0;
 }
