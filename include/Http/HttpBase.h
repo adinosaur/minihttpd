@@ -14,6 +14,15 @@ using std::map;
 class HttpBase
 {
     public:
+        // root dir.
+        static string HTTP_ROOT_DIR;
+        
+        // set root dir.
+        static void set_root_dir(const string& dir)
+        {
+            HTTP_ROOT_DIR = dir;
+        }
+        
         // http method.
         static const int METHOD_UNKNOWN;
         static const int METHOD_GET;
@@ -36,6 +45,8 @@ class HttpBase
         
         static map<string, string> content_type_map;
 };
+
+string HttpBase::HTTP_ROOT_DIR = "/var/www";
 
 // http method.
 const int HttpBase::METHOD_UNKNOWN = 0;

@@ -22,9 +22,7 @@
 
 using std::string;
 
-#define DEFAULT_HTTP_ROOT_DIR "/var/www"
-
-class Http
+class Http : public HttpBase
 {
     public:
         Http(int connfd):
@@ -47,7 +45,7 @@ class Http
         void serve_file()
         {
             char buf[1024];
-            std::ifstream f(Http::_http_root_dir + _http_request.get_path());
+            std::ifstream f(HttpBase::HTTP_ROOT_DIR + _http_request.get_path());
             
             if (f)
             {
@@ -291,8 +289,6 @@ class Http
             _http_response.print(std::cout);
         }
     private:
-        static string _http_root_dir;
-        
         int _connfd;
         
         bool _request_flag;
@@ -301,8 +297,6 @@ class Http
         HttpRequest _http_request;
         HttpResponse _http_response;
 };
-
-string Http::_http_root_dir(DEFAULT_HTTP_ROOT_DIR);
 
 #endif
 
