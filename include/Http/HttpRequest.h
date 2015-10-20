@@ -6,6 +6,7 @@
 #ifndef MINIHTTPD_HTTPREQUEST_H
 #define MINIHTTPD_HTTPREQUEST_H
 
+//#include "../Logger/Logger.h"
 #include "HttpBase.h"
 
 #include <string>
@@ -26,7 +27,8 @@ class HttpRequest : public HttpBase
             _version(HTTPV_UNKONWN),
             _path(),
             _query(),
-            _headers()
+            _headers(),
+            _body()
         {
         }
         
@@ -132,6 +134,41 @@ class HttpRequest : public HttpBase
             return result;
         }
         
+        const string& body()
+        {
+            return _body;
+        }
+        
+        string str_method()
+        {
+            switch(_method)
+            {
+                case METHOD_GET:
+                    return "GET";
+                case METHOD_POST:
+                    return "POST";
+                default:
+                    return "";
+            }
+        }
+        
+        string str_version()
+        {
+            switch(_version)
+            {
+                case HTTPV_09:
+                    return "HTTP/0.9";
+                case HTTPV_10:
+                    return "HTTP/1.0";
+                case HTTPV_11:
+                    return "HTTP/1.1";
+                case HTTPV_20:
+                    return "HTTP/2.0";
+                default:
+                    return "";
+            }
+        }
+        
         void print(std::ostream& os)
         {
             os << ">";
@@ -147,25 +184,12 @@ class HttpRequest : public HttpBase
                     break;
             }
             
-            os << " " << _path << _query;
+            os << " " << _path;
+            if (!_query.empty())
+                os << "?" << _query;
             os << " ";
             
-            switch(_version)
-            {
-                case HTTPV_09:
-                    os << "HTTP/0.9";
-                    break;
-                case HTTPV_10:
-                    os << "HTTP/1.0";
-                    break;
-                case HTTPV_11:
-                    os << "HTTP/1.1";
-                    break;
-                case HTTPV_20:
-                    os << "HTTP/2.0";
-                    break;
-            }
-            
+            os << str_version();
             os << "\r\n";
             
             for (auto& header : _headers)
@@ -183,6 +207,7 @@ class HttpRequest : public HttpBase
         string _path;
         string _query;
         std::map<string, string> _headers;
+        string _body;
 };
 
 #endif

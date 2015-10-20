@@ -41,6 +41,7 @@ class HttpBase
         static const int HTTP_STATUS_CODE_301;
         static const int HTTP_STATUS_CODE_400;
         static const int HTTP_STATUS_CODE_404;
+        static const int HTTP_STATUS_CODE_500;
         static const int HTTP_STATUS_CODE_501;
         
         static map<string, string> content_type_map;
@@ -66,6 +67,7 @@ const int HttpBase::HTTP_STATUS_CODE_200 = 200;
 const int HttpBase::HTTP_STATUS_CODE_301 = 301;
 const int HttpBase::HTTP_STATUS_CODE_400 = 400;
 const int HttpBase::HTTP_STATUS_CODE_404 = 404;
+const int HttpBase::HTTP_STATUS_CODE_500 = 500;
 const int HttpBase::HTTP_STATUS_CODE_501 = 501;
 
 map<string, string> HttpBase::content_type_map = {

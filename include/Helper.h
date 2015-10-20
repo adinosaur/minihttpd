@@ -15,33 +15,37 @@
 class Helper
 {
     public:
-        static int get_line(int sock, char *buf, int size)
+        static int readline(int fd, char *buf, int size)
         {
-            int i = 0;
-            char c = '\0';
-            int n;
+            int n, rc;
+            char c, *ptr;
             
-            while ((i < size - 1) && (c != '\n'))
+            ptr = buf;
+            
+            for (n = 0; n < size-1; ++n)
             {
-                n = recv(sock, &c, 1, 0);
-                if (n > 0)
+                rc = read(fd, &c, 1);
+                if (rc == 1)
                 {
-                    if (c == '\r')
-                    {
-                        n = recv(sock, &c, 1, MSG_PEEK);
-                        if ((n > 0) && (c == '\n'))
-                            recv(sock, &c, 1, 0);
-                        else
-                        c = '\n';
-                    }
-                    buf[i] = c;
-                    i++;
+                    if (c == '\n')
+                        break;
+                    *ptr++ = c;
+                }
+                else if (rc == 0)
+                {
+                    break;
                 }
                 else
-                    c = '\n';
+                {
+                    return -1;
+                }
             }
-            buf[i] = '\0';
-            return i;
+            
+            *ptr++ = '\n';
+            *ptr = '\0';
+            
+            //std::cout << (ptr-buf) / sizeof(char*) << std::endl;
+            return (ptr-buf);
         }
 };
 

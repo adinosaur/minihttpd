@@ -98,6 +98,9 @@ class HttpResponse : public HttpBase
                 case HTTP_STATUS_CODE_404:
                     response += "404 Not Found\r\n";
                     break;
+                case HTTP_STATUS_CODE_500:
+                    response += "500 Internal Server Error\r\n";
+                    break;
                 case HTTP_STATUS_CODE_501:
                     response += "501 Not Implemented\r\n";
                     break;
