@@ -56,7 +56,7 @@ class Http : public HttpBase
             // read http request line.
             n = Helper::readline(_connfd, buf, sizeof(buf));
             
-            TRACE_LOG.logging("TRACE", __FILE__, __LINE__, "READLINE-BYTES", n);
+            TRACE_LOG.logging(__FILE__, __LINE__, "READLINE-BYTES", n);
             
             char* beg = buf;
             char* end = beg + n;
@@ -123,6 +123,19 @@ class Http : public HttpBase
                     cur++;
             }
             
+            // read body
+            string content_length = _http_request.get_header("Content-Length");
+            if (content_length != "")
+            {
+                unsigned long length = std::stoul(content_length);
+                while (length > 0)
+                {
+                    n = read(_connfd, buf, sizeof(buf));
+                    _http_request.append_to_body(buf, buf + n);
+                    length -= n;
+                }
+            }
+            
             _request_flag = true;
             _http_request.print(std::cout);
         }
@@ -133,7 +146,6 @@ class Http : public HttpBase
         void handle_request()
         {
             assert(_request_flag);
-            bool cgi = false;
             bool success;
             
             if (!supported())
@@ -141,32 +153,37 @@ class Http : public HttpBase
                 unimplemented();
                 return;
             }
-            else if (path_not_found())
+            
+            if (_http_request.get_path() == "/")
+            {
+                index();
+                return;
+            }
+            
+            if (path_not_found())
             {
                 not_found();
                 return;
             }
-            else 
+
+            switch (_http_request.get_method())
             {
-                if (_http_request.get_method() == HttpResponse::METHOD_POST ||
-                    !_http_request.get_query().empty())
-                    cgi = true;
-                
-                if (_http_request.get_path() == "/")
-                {
-                    index();
-                }
-                else
-                {
-                    if (!cgi)
-                        success = serve_file();
-                    else
+                // GET
+                case METHOD_GET:
+                    if (!_http_request.get_query().empty())
                         success = execute_cgi();
-                    
-                    if (!success)
-                        internal_server_error();
-                }
+                    else
+                        success = serve_file();
+                    break;
+                
+                // POST
+                case METHOD_POST:
+                    success = execute_cgi();
+                    break;
             }
+
+            if (!success)
+                internal_server_error();
         }
         
         //
@@ -251,14 +268,14 @@ class Http : public HttpBase
                     _http_response.append_to_body(buf, buf + f.gcount());
                 }
                 
-                TRACE_LOG.logging("TRACE", __FILE__, __LINE__, "SERVE-FILE", _http_request.get_path(), "SUFFIX", suffix);
+                TRACE_LOG.logging(__FILE__, __LINE__, "SUFFIX", suffix);
             
                 _response_flag = true;
                 return true;
             } 
             catch (ServeFileException e)
             {
-                ERROR_LOG.logging("ERROR", e.filename, e.line_num, e.error_type, e.error_info);
+                ERROR_LOG.logging(e.filename, e.line_num, e.error_type, e.error_info);
                 return false;
             }
         }
@@ -269,7 +286,6 @@ class Http : public HttpBase
         //
         bool execute_cgi()
         {
-            
             pid_t pid;
             int cgi_input[2];
             int cgi_output[2];
@@ -297,10 +313,13 @@ class Http : public HttpBase
                     // 如果request有body数据则通过cgi-input发送给CGI进程
                     if (!request_body.empty())
                     {
-                        nbyte = write(cgi_input[0], request_body.data(), request_body.size());
+                        nbyte = write(cgi_input[1], request_body.data(), request_body.size());
                         if (nbyte == -1)
                             throw ExecuteCGIException(__FILE__, __LINE__, "WRITE-PIPE", "cgi_input");
                     }
+                    
+                    // XXX 必须此时关闭
+                    close(cgi_input[1]);
                     
                     _http_response.set_status_code(200);
                     
@@ -344,7 +363,7 @@ class Http : public HttpBase
                         
                         string val(beg, rcur+1);
                         
-                        TRACE_LOG.logging("TRACE", __FILE__, __LINE__, "KEY", key, "VAL", val);
+                        TRACE_LOG.logging(__FILE__, __LINE__, "KEY", key, "VAL", val);
                         _http_response.add_header(key, val);
                     }
                     
@@ -364,7 +383,6 @@ class Http : public HttpBase
                     _response_flag = true;
                     
                     close(cgi_output[0]);
-                    close(cgi_input[1]);
                     
                     waitpid(pid, &status, 0);
                     if (status != 0)
@@ -382,21 +400,21 @@ class Http : public HttpBase
                     setenv();
                     
                     string path = HttpBase::HTTP_ROOT_DIR + _http_request.get_path();
-                    TRACE_LOG.logging("TRACE", __FILE__, __LINE__, "PATH", path);
+                    TRACE_LOG.logging(__FILE__, __LINE__, "PATH", path);
                     
                     if (execl(path.data(), path.data(), NULL) == -1)
                     {
-                        ERROR_LOG.logging("ERROR", __FILE__, __LINE__, "EXECL", path);
+                        ERROR_LOG.logging(__FILE__, __LINE__, "EXECL", path);
                         exit(1);
                     }
-                    exit(0);
+                    //exit(0);
                 }
                 
                 return true;
             }
             catch (ExecuteCGIException e)
             {
-                ERROR_LOG.logging("ERROR", e.filename, e.line_num, e.error_type, e.error_info);
+                ERROR_LOG.logging(e.filename, e.line_num, e.error_type, e.error_info);
                 return false;
             }
         }
@@ -452,10 +470,10 @@ class Http : public HttpBase
             if (!http_referer.empty())
                 ::setenv("HTTP_REFERER", http_referer.data(), 0);
             
-            if (script_name.empty())
+            if (!script_name.empty())
                 ::setenv("SCRIPT_NAME", script_name.data(), 0);
             
-            if (query_string.empty())
+            if (!query_string.empty())
                 ::setenv("QUERY_STRING", query_string.data(), 0);
         }
         
@@ -466,8 +484,8 @@ class Http : public HttpBase
         {
             string body("");
              
-            body += "<HTML><TITLE>Bad Request</TITLE>\r\n";
-            body += "<BODY><P>400 Bad Request.\r\n";
+            body += "<HTML><HEAD><TITLE>Bad Request</TITLE></HEAD>\r\n";
+            body += "<BODY><P>400 Bad Request.</P>\r\n";
             body += "</BODY></HTML>\r\n";
             
             _http_response.set_status_code(400);
@@ -484,8 +502,8 @@ class Http : public HttpBase
         {
             string body("");
              
-            body += "<HTML><TITLE>Not Found</TITLE>\r\n";
-            body += "<BODY><P>404 NOT FOUND.\r\n";
+            body += "<HTML><HEAD><TITLE>Not Found</TITLE></HEAD>\r\n";
+            body += "<BODY><P>404 NOT FOUND.</P>\r\n";
             body += "</BODY></HTML>\r\n";
             
             _http_response.set_status_code(404);
@@ -493,7 +511,7 @@ class Http : public HttpBase
             _http_response.set_body(body);
             
             _response_flag = true;
-            ERROR_LOG.logging("ERROR", __FILE__, __LINE__, "NOT-FOUND", _http_request.get_path());
+            ERROR_LOG.logging(__FILE__, __LINE__, "NOT-FOUND", _http_request.get_path());
         }
         
         //
@@ -503,9 +521,8 @@ class Http : public HttpBase
         {
             string body("");
              
-            body += "<HTML><HEAD><TITLE>HTTP-Internal Server Error\r\n";
-            body += "</TITLE></HEAD>\r\n";
-            body += "<BODY><P>HTTP-Internal Server Error.\r\n";
+            body += "<HTML><HEAD><TITLE>HTTP-Internal Server Error</TITLE></HEAD>\r\n";
+            body += "<BODY><P>HTTP-Internal Server Error.</P>\r\n";
             body += "</BODY></HTML>\r\n";
             
             _http_response.set_status_code(500);
@@ -522,9 +539,8 @@ class Http : public HttpBase
         {
             string body("");
              
-            body += "<HTML><HEAD><TITLE>Method Not Implemented\r\n";
-            body += "</TITLE></HEAD>\r\n";
-            body += "<BODY><P>HTTP request method not supported.\r\n";
+            body += "<HTML><HEAD><TITLE>Method Not Implemented</TITLE></HEAD>\r\n";
+            body += "<BODY><P>HTTP request method not supported.</P>\r\n";
             body += "</BODY></HTML>\r\n";
             
             _http_response.set_status_code(501);
@@ -541,8 +557,8 @@ class Http : public HttpBase
         {
             string body("");
              
-            body += "<HTML><TITLE>Index</TITLE>\r\n";
-            body += "<BODY><P>Hello World\r\n";
+            body += "<HTML><HEAD><TITLE>Index</TITLE></HEAD>\r\n";
+            body += "<BODY><P>Hello World.</P>\r\n";
             body += "</BODY></HTML>\r\n";
             
             _http_response.set_status_code(200);

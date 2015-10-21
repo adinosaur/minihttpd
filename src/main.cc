@@ -10,7 +10,7 @@
 int main()
 {
     // 设置http服务器的根目录
-    Http::set_root_dir("/home/dinosaur");
+    Http::set_root_dir("/home/dinosaur/projects");
     
     // 创建Http服务器
     EventLoop<Http> httpServer(8080);

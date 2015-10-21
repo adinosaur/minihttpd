@@ -41,13 +41,15 @@ class Logger
         // check level then logging
         //
         template <typename ... Args>
-        void logging(const Args& ... args)
+        void logging(const std::string& file, int line, const Args& ... args)
         {
             if (_level >= _cur_log_level)
             {
                 _log << this->date() << SEP;
                 _log << this->time() << SEP;
+                _log << str_level() << SEP;
                 _logging(args...);
+                _log << file << ":" << line << SEP;
                 _log << std::endl;
             }
         }
@@ -67,6 +69,23 @@ class Logger
         {
             _log << t << SEP;
             _logging(args...);
+        }
+        
+        std::string str_level()
+        {
+            switch (_level)
+            {
+                case TRACE:
+                    return "TRACE";
+                case DEBUG:
+                    return "DEBUG";
+                case INFO:
+                    return "INFO";
+                case WARN:
+                    return "WARN";
+                case ERROR:
+                    return "ERROR";
+            }
         }
         
         static std::string date()

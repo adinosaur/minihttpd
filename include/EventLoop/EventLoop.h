@@ -61,13 +61,13 @@ class EventLoop
                 int connfd = accept(listen_channel.fd(), (struct sockaddr*)(&cliaddr), &length);
                 if (connfd < 0)
                 {
-                    ERROR_LOG.logging("ERROR", __FILE__, __LINE__, "ACCEPT-ERROR");
+                    ERROR_LOG.logging(__FILE__, __LINE__, "ACCEPT-ERROR");
                     exit(1);
                 }
                 
                 // logger.
                 inet_ntop(AF_INET, &cliaddr.sin_addr, client_addr, sizeof(client_addr));
-                TRACE_LOG.logging("TRACE", __FILE__, __LINE__, "NEW-CONNECTION", client_addr, ntohs(cliaddr.sin_port), connfd);
+                TRACE_LOG.logging(__FILE__, __LINE__, "NEW-CONNECTION", client_addr, ntohs(cliaddr.sin_port), connfd);
                 
                 // connect_channel必须是一个堆变量
                 // 且生存期要到调用connect_channel中的callback中的del_channel(connfd)
@@ -130,7 +130,14 @@ class EventLoop
             int sockfd = socket(AF_INET, SOCK_STREAM, 0);
             if (sockfd < 0)
             {
-                ERROR_LOG.logging("ERROR", __FILE__, __LINE__, "SOCKET-CREATE-ERROR");
+                ERROR_LOG.logging(__FILE__, __LINE__, "SOCKET-CREATE-ERROR");
+                exit(1);
+            }
+            
+            int flag = 1;
+            if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)) < 0)
+            {
+                ERROR_LOG.logging(__FILE__, __LINE__, "SET-SOCKET-OPT", "SO_REUSEADDR");
                 exit(1);
             }
             
@@ -141,14 +148,14 @@ class EventLoop
             seraddr.sin_addr.s_addr = htonl(INADDR_ANY);
             if (bind(sockfd, (struct sockaddr*)(&seraddr), sizeof(seraddr)) < 0)
             {
-                ERROR_LOG.logging("ERROR", __FILE__, __LINE__, "BIND-ERROR");
+                ERROR_LOG.logging(__FILE__, __LINE__, "BIND-ERROR");
                 exit(1);
             }
             
             // listen
             if (listen(sockfd, 5) < 0)
             {
-                ERROR_LOG.logging("ERROR", __FILE__, __LINE__, "LISTEN-ERROR");
+                ERROR_LOG.logging(__FILE__, __LINE__, "LISTEN-ERROR");
                 exit(1);
             }
             

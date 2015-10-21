@@ -134,6 +134,16 @@ class HttpRequest : public HttpBase
             return result;
         }
         
+        void append_to_body(const string& b)
+        {
+            _body.append(b);
+        }
+
+        void append_to_body(const char* b, const char* e)
+        {
+            _body.append(b, e);
+        }
+        
         const string& body()
         {
             return _body;
@@ -197,8 +207,8 @@ class HttpRequest : public HttpBase
                 os << ">";
                 os << header.first << ": " << header.second << "\r\n";
             }
-            
-            os << std::endl;
+            os << "\r\n";
+            os << ">" << _body << std::endl;
         }
         
     private:

@@ -65,7 +65,7 @@ class HttpResponse : public HttpBase
             _body.append(b);
         }
 
-        void append_to_body(char* b, char* e)
+        void append_to_body(const char* b, const char* e)
         {
             _body.append(b, e);
         }

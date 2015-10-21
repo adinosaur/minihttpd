@@ -77,7 +77,7 @@ class Select : public IOMultiplexing
             int nready = ::select(maxfd+1, &rset, NULL, NULL, NULL);
             
             // 日志
-            INFO_LOG.logging("INFO", __FILE__, __LINE__, "SELECT", "NREADY", nready);
+            INFO_LOG.logging(__FILE__, __LINE__, "SELECT", "NREADY", nready);
             
             for (auto& x : _channel_map)
             {
@@ -157,7 +157,7 @@ class Poll : public IOMultiplexing
             int nready = ::poll(static_cast<struct pollfd *>(fd_array.data()), fd_array.size(), -1);
             
             // 日志
-            INFO_LOG.logging("INFO", __FILE__, __LINE__, "POLL", "NREADY", nready);
+            INFO_LOG.logging(__FILE__, __LINE__, "POLL", "NREADY", nready);
             
             for (auto& x : fd_array)
             {
@@ -203,7 +203,7 @@ class Epoll : public IOMultiplexing
             int epollfd = epoll_create(10);
             if (epollfd == -1) 
             {
-               ERROR_LOG.logging("ERROR", __FILE__, __LINE__, "EPOLL-CREATE");
+               ERROR_LOG.logging(__FILE__, __LINE__, "EPOLL-CREATE");
                exit(1);
             }
 
@@ -216,7 +216,7 @@ class Epoll : public IOMultiplexing
                     
                     if (epoll_ctl(epollfd, EPOLL_CTL_ADD, x.first, &ev) == -1) 
                     {
-                        ERROR_LOG.logging("ERROR", __FILE__, __LINE__, "EPOLL-CTL");
+                        ERROR_LOG.logging(__FILE__, __LINE__, "EPOLL-CTL");
                         exit(1);
                     }
                 }
@@ -226,12 +226,12 @@ class Epoll : public IOMultiplexing
             int nready = ::epoll_wait(epollfd, events.data(), max_events, -1);
             if (nready == -1) 
             {
-                ERROR_LOG.logging("ERROR", __FILE__, __LINE__, "EPOLL-PWAIT");
+                ERROR_LOG.logging(__FILE__, __LINE__, "EPOLL-PWAIT");
                 exit(1);
             }
 
             // 日志
-            INFO_LOG.logging("INFO", __FILE__, __LINE__, "POLL", "NREADY", nready);
+            INFO_LOG.logging(__FILE__, __LINE__, "POLL-NREADY", nready);
             
             for (int i = 0; i != nready; ++i)
                 channel_list.push_back(_channel_map[events[i].data.fd]);
