@@ -75,12 +75,18 @@ class HttpResponse : public HttpBase
             _body = body;
         }
         
+        const string& get_body()
+        {
+            return _body;
+        }
+        
         void add_header(const string& k, const string& v)
         {
             _headers[k] = v;
         }
         
-        string to_string()
+        // 支持HTTP的HEAD方法
+        string to_string_without_body()
         {
             string response;
             response += "HTTP/1.0 ";
@@ -114,14 +120,20 @@ class HttpResponse : public HttpBase
                 response += "\r\n";
             }
             response += "\r\n";
+            return response;
+        }
+        
+        string to_string()
+        {
+            string response = to_string_without_body();
             response += _body;
-            
             return response;
         }
         
         void print(std::ostream& os)
         {
-            string response = to_string();
+            //string response = to_string();
+            string response = to_string_without_body();
             
             auto beg = response.begin();
             auto cur = beg;

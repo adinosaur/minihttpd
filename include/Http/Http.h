@@ -176,6 +176,14 @@ class Http : public HttpBase
                         success = serve_file();
                     break;
                 
+                // HEAD
+                case METHOD_HEAD:
+                    if (!_http_request.get_query().empty())
+                        success = execute_cgi();
+                    else
+                        success = serve_file();
+                    break;
+                
                 // POST
                 case METHOD_POST:
                     success = execute_cgi();
@@ -191,7 +199,13 @@ class Http : public HttpBase
         //
         void send_response()
         {
-            string buf = _http_response.to_string();
+            string buf;
+            
+            if (_http_request.get_method() == METHOD_HEAD)
+                buf = _http_response.to_string_without_body();
+            else
+                buf = _http_response.to_string();
+            
             write(_connfd, buf.data(), buf.size());
             _http_response.print(std::cout);
         }
@@ -258,7 +272,7 @@ class Http : public HttpBase
                 }
                 
                 _http_response.set_status_code(200);
-                _http_response.add_header("Content-Type", content_type);
+                _http_response.add_header("Content-type", content_type);
                 
                 while (1)
                 {
@@ -267,6 +281,7 @@ class Http : public HttpBase
                         break;
                     _http_response.append_to_body(buf, buf + f.gcount());
                 }
+                _http_response.add_header("Content-length", std::to_string(_http_response.get_body().size()));
                 
                 TRACE_LOG.logging(__FILE__, __LINE__, "SUFFIX", suffix);
             

@@ -58,6 +58,8 @@ class HttpRequest : public HttpBase
             string m(start, end);
             if (m == "GET")
                 _method = METHOD_GET;
+            else if (m == "HEAD")
+                _method = METHOD_HEAD;
             else if (m == "POST")
                 _method = METHOD_POST;
             else
@@ -155,6 +157,8 @@ class HttpRequest : public HttpBase
             {
                 case METHOD_GET:
                     return "GET";
+                case METHOD_HEAD:
+                    return "HEAD";
                 case METHOD_POST:
                     return "POST";
                 default:

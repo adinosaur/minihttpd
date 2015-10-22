@@ -26,6 +26,7 @@ class HttpBase
         // http method.
         static const int METHOD_UNKNOWN;
         static const int METHOD_GET;
+        static const int METHOD_HEAD;
         static const int METHOD_POST;
         
         // http version.
@@ -52,7 +53,8 @@ string HttpBase::HTTP_ROOT_DIR = "/var/www";
 // http method.
 const int HttpBase::METHOD_UNKNOWN = 0;
 const int HttpBase::METHOD_GET = 1;
-const int HttpBase::METHOD_POST = 2;
+const int HttpBase::METHOD_HEAD = 2;
+const int HttpBase::METHOD_POST = 3;
 
 // http version.
 const int HttpBase::HTTPV_UNKONWN = 0;
@@ -308,7 +310,8 @@ map<string, string> HttpBase::content_type_map = {
     {".rle", "application/x-rle"},
     {".wav", "audio/wav"},
     {".c90", "application/x-c90"},
-    {".jpg", "application/x-jpg"},
+    //{".jpg", "application/x-jpg"},
+    {".jpg", "image/jpeg"},
     {".smi", "application/smil"},
     {".txt", "text/plain"},
     {".au", "audio/basic"},
