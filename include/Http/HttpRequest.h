@@ -23,8 +23,8 @@ class HttpRequest : public HttpBase
 {
     public:
         HttpRequest():
-            _method(METHOD_UNKNOWN),
-            _version(HTTPV_UNKONWN),
+            _method(HttpMethod::unknown),
+            _version(HttpVersion::unknown),
             _path(),
             _query(),
             _headers(),
@@ -32,7 +32,7 @@ class HttpRequest : public HttpBase
         {
         }
         
-        HttpRequest(int m, int v):
+        HttpRequest(HttpMethod m, HttpVersion v):
             _method(m),
             _version(v),
             _path(),
@@ -41,7 +41,7 @@ class HttpRequest : public HttpBase
         {
         }
         
-        HttpRequest(int m, int v, 
+        HttpRequest(HttpMethod m, HttpVersion v, 
             const string& p, 
             const string& q):
             _method(m),
@@ -54,19 +54,15 @@ class HttpRequest : public HttpBase
         
         void set_method(const char* start, const char* end)
         {
-            // TODO now only GET, POST supported.
             string m(start, end);
-            if (m == "GET")
-                _method = METHOD_GET;
-            else if (m == "HEAD")
-                _method = METHOD_HEAD;
-            else if (m == "POST")
-                _method = METHOD_POST;
+            auto it = str_to_method_map.find(m);
+            if (it != str_to_method_map.end())
+                _method = it->second;
             else
-                _method = METHOD_UNKNOWN;
+                _method = HttpMethod::unknown;
         }
         
-        int get_method()
+        HttpMethod get_method()
         {
             return _method;
         }
@@ -74,19 +70,14 @@ class HttpRequest : public HttpBase
         void set_version(const char* start, const char* end)
         {
             string v(start, end);
-            if (v == "HTTP/0.9")
-                _version = HTTPV_09;
-            else if (v == "HTTP/1.0")
-                _version = HTTPV_10;
-            else if (v == "HTTP/1.1")
-                _version = HTTPV_11;
-            else if (v == "HTTP/2.0")
-                _version = HTTPV_20;
+            auto it = str_to_version_map.find(v);
+            if (it != str_to_version_map.end())
+                _version = it->second;
             else
-                _version = HTTPV_UNKONWN;
+                _version = HttpVersion::unknown;
         }
         
-        int get_version()
+        HttpVersion get_version()
         {
             return _version;
         }
@@ -153,51 +144,17 @@ class HttpRequest : public HttpBase
         
         string str_method()
         {
-            switch(_method)
-            {
-                case METHOD_GET:
-                    return "GET";
-                case METHOD_HEAD:
-                    return "HEAD";
-                case METHOD_POST:
-                    return "POST";
-                default:
-                    return "";
-            }
+            return method_to_str_map[_method];
         }
         
         string str_version()
         {
-            switch(_version)
-            {
-                case HTTPV_09:
-                    return "HTTP/0.9";
-                case HTTPV_10:
-                    return "HTTP/1.0";
-                case HTTPV_11:
-                    return "HTTP/1.1";
-                case HTTPV_20:
-                    return "HTTP/2.0";
-                default:
-                    return "";
-            }
+            return version_to_str_map[_version];
         }
         
         void print(std::ostream& os)
         {
-            os << ">";
-            
-            switch(_method)
-            {
-                case METHOD_GET:
-                    os << "GET";
-                    break;
-                
-                case METHOD_POST:
-                    os << "POST";
-                    break;
-            }
-            
+            os << ">" << method_to_str_map[_method];
             os << " " << _path;
             if (!_query.empty())
                 os << "?" << _query;
@@ -216,8 +173,8 @@ class HttpRequest : public HttpBase
         }
         
     private:
-        int _method;
-        int _version;
+        HttpMethod _method;
+        HttpVersion _version;
         string _path;
         string _query;
         std::map<string, string> _headers;

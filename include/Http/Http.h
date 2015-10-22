@@ -7,6 +7,7 @@
 #define MINIHTTPD_HTTP_H
 
 #include "../Exception.h"
+#include "../StrTime.h"
 #include "../Logger/Logger.h"
 #include "../Noncopyable.h"
 #include "../Helper.h"
@@ -169,7 +170,7 @@ class Http : public HttpBase
             switch (_http_request.get_method())
             {
                 // GET
-                case METHOD_GET:
+                case HttpMethod::get:
                     if (!_http_request.get_query().empty())
                         success = execute_cgi();
                     else
@@ -177,16 +178,26 @@ class Http : public HttpBase
                     break;
                 
                 // HEAD
-                case METHOD_HEAD:
+                case HttpMethod::head:
                     if (!_http_request.get_query().empty())
                         success = execute_cgi();
                     else
                         success = serve_file();
                     break;
                 
+                // PUT
+                case HttpMethod::put:
+                    success = false;
+                    break;
+                
                 // POST
-                case METHOD_POST:
+                case HttpMethod::post:
                     success = execute_cgi();
+                    break;
+                
+                // unknown method
+                case HttpMethod::unknown:
+                    success = false;
                     break;
             }
 
@@ -200,8 +211,12 @@ class Http : public HttpBase
         void send_response()
         {
             string buf;
+            StrTime now;
             
-            if (_http_request.get_method() == METHOD_HEAD)
+            // 添加通用头部
+            _http_response.add_header("Date", now.to_string("%a, %d %b %Y %H:%M:%S %Z"));
+            
+            if (_http_request.get_method() == HttpMethod::head)
                 buf = _http_response.to_string_without_body();
             else
                 buf = _http_response.to_string();
@@ -230,8 +245,8 @@ class Http : public HttpBase
         bool supported()
         {
             assert(_request_flag);
-            return _http_request.get_method() != HttpRequest::METHOD_UNKNOWN
-                && _http_request.get_version() != HttpRequest::HTTPV_UNKONWN;
+            return _http_request.get_method() != HttpMethod::unknown
+                && _http_request.get_version() != HttpVersion::unknown;
         }
         
         //

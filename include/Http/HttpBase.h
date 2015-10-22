@@ -24,26 +24,33 @@ class HttpBase
         }
         
         // http method.
-        static const int METHOD_UNKNOWN;
-        static const int METHOD_GET;
-        static const int METHOD_HEAD;
-        static const int METHOD_POST;
+        enum class HttpMethod 
+        { unknown, get, head, put, post };
         
         // http version.
-        static const int HTTPV_UNKONWN;
-        static const int HTTPV_09;
-        static const int HTTPV_10;
-        static const int HTTPV_11;
-        static const int HTTPV_20;
+        enum class HttpVersion 
+        { unknown, v09, v10, v11, v20 };
         
         // http status code
-        static const int HTTP_STATUS_CODE_UNKNOWN;
-        static const int HTTP_STATUS_CODE_200;
-        static const int HTTP_STATUS_CODE_301;
-        static const int HTTP_STATUS_CODE_400;
-        static const int HTTP_STATUS_CODE_404;
-        static const int HTTP_STATUS_CODE_500;
-        static const int HTTP_STATUS_CODE_501;
+        enum class HttpStatusCode 
+        { 
+            unknown = 0, 
+            s200 = 200, 
+            s301 = 301, 
+            s400 = 400, 
+            s404 = 404, 
+            s500 = 500, 
+            s501 = 501 
+        };
+        
+        // map
+        static map<HttpMethod, string> method_to_str_map;
+        static map<string, HttpMethod> str_to_method_map;
+        
+        static map<HttpVersion, string> version_to_str_map;
+        static map<string, HttpVersion> str_to_version_map;
+        
+        static map<HttpStatusCode, string> status_to_str_map;
         
         static map<string, string> content_type_map;
 };
@@ -51,28 +58,77 @@ class HttpBase
 string HttpBase::HTTP_ROOT_DIR = "/var/www";
 
 // http method.
-const int HttpBase::METHOD_UNKNOWN = 0;
-const int HttpBase::METHOD_GET = 1;
-const int HttpBase::METHOD_HEAD = 2;
-const int HttpBase::METHOD_POST = 3;
+//enum class HttpBase::HttpMethod = 
+//{ unknown, get, head, put, post };
 
 // http version.
-const int HttpBase::HTTPV_UNKONWN = 0;
-const int HttpBase::HTTPV_09 = 1;
-const int HttpBase::HTTPV_10 = 2;
-const int HttpBase::HTTPV_11 = 3;
-const int HttpBase::HTTPV_20 = 4;
+//enum class HttpBase::HttpVersion = 
+//{ unknown, v09, v10, v11, v20 };
 
 // http status code
-const int HttpBase::HTTP_STATUS_CODE_UNKNOWN = 0;
-const int HttpBase::HTTP_STATUS_CODE_200 = 200;
-const int HttpBase::HTTP_STATUS_CODE_301 = 301;
-const int HttpBase::HTTP_STATUS_CODE_400 = 400;
-const int HttpBase::HTTP_STATUS_CODE_404 = 404;
-const int HttpBase::HTTP_STATUS_CODE_500 = 500;
-const int HttpBase::HTTP_STATUS_CODE_501 = 501;
+/*
+enum class HttpBase::HttpStatusCode = 
+{ 
+    unknown = 0, 
+    s200 = 200, 
+    s301 = 301, 
+    s400 = 400, 
+    s404 = 404, 
+    s500 = 500, 
+    s501 = 501 
+};*/
 
-map<string, string> HttpBase::content_type_map = {
+// http method.
+map<HttpBase::HttpMethod, string> HttpBase::method_to_str_map = 
+{
+    {HttpBase::HttpMethod::unknown, ""},
+    {HttpBase::HttpMethod::get, "GET"},
+    {HttpBase::HttpMethod::head, "HEAD"},
+    {HttpBase::HttpMethod::put, "PUT"},
+    {HttpBase::HttpMethod::post, "POST"}
+};
+
+map<string, HttpBase::HttpMethod> HttpBase::str_to_method_map = 
+{
+    {"", HttpBase::HttpMethod::unknown},
+    {"GET", HttpBase::HttpMethod::get},
+    {"HEAD", HttpBase::HttpMethod::head},
+    {"PUT", HttpBase::HttpMethod::put},
+    {"POST", HttpBase::HttpMethod::post}
+};
+
+// http version.
+map<HttpBase::HttpVersion, string> HttpBase::version_to_str_map = 
+{
+    {HttpBase::HttpVersion::unknown, ""},
+    {HttpBase::HttpVersion::v09, "HTTP/0.9"},
+    {HttpBase::HttpVersion::v10, "HTTP/1.0"},
+    {HttpBase::HttpVersion::v11, "HTTP/1.1"},
+    {HttpBase::HttpVersion::v20, "HTTP/2.0"}
+};
+
+map<string, HttpBase::HttpVersion> HttpBase::str_to_version_map = 
+{
+    {"", HttpBase::HttpVersion::unknown},
+    {"HTTP/0.9", HttpBase::HttpVersion::v09},
+    {"HTTP/1.0", HttpBase::HttpVersion::v10},
+    {"HTTP/1.1", HttpBase::HttpVersion::v11},
+    {"HTTP/2.0", HttpBase::HttpVersion::v20}
+};
+
+map<HttpBase::HttpStatusCode, string> HttpBase::status_to_str_map = 
+{
+    {HttpBase::HttpStatusCode::unknown, ""},
+    {HttpBase::HttpStatusCode::s200, "200 OK"},
+    {HttpBase::HttpStatusCode::s301, "301 Moved Permanently"},
+    {HttpBase::HttpStatusCode::s400, "400 Bad Request"},
+    {HttpBase::HttpStatusCode::s404, "404 Not Found"},
+    {HttpBase::HttpStatusCode::s500, "500 Internal Server Error"},
+    {HttpBase::HttpStatusCode::s501, "501 Not Implemented"}
+};
+
+map<string, string> HttpBase::content_type_map = 
+{
     {".wmf", "application/x-wmf"},
     {".x_t", "application/x-x_t"},
     {".pcl", "application/x-pcl"},
