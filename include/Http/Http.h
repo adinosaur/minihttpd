@@ -149,23 +149,36 @@ class Http : public HttpBase
             assert(_request_flag);
             bool success;
             
+            // Not Supported
             if (!supported())
             {
                 unimplemented();
                 return;
             }
             
+            // 主页
             if (_http_request.get_path() == "/")
             {
                 index();
                 return;
             }
             
+            // Not Found
             if (path_not_found() && 
                 _http_request.get_method() != HttpMethod::put)
             {
                 not_found();
                 return;
+            }
+
+            // 认证
+            if ()
+            {
+                if (!do_authorization())
+                {
+                    authorization_required();
+                    return;
+                }
             }
 
             switch (_http_request.get_method())
@@ -248,6 +261,15 @@ class Http : public HttpBase
             assert(_request_flag);
             return _http_request.get_method() != HttpMethod::unknown
                 && _http_request.get_version() != HttpVersion::unknown;
+        }
+        
+        //
+        // 用户认证
+        // 必须在调用accept_request函数之后调用
+        //
+        bool do_authorization()
+        {
+            
         }
         
         //
@@ -555,6 +577,25 @@ class Http : public HttpBase
             _http_response.set_body(body);
             
             _response_flag = true;
+        }
+        
+        //
+        // 401 Authorization Required
+        //
+        void authorization_required()
+        {
+            string body("");
+             
+            body += "<HTML><HEAD><TITLE>Authorization Required</TITLE></HEAD>\r\n";
+            body += "<BODY><P>401 Authorization Required.</P>\r\n";
+            body += "</BODY></HTML>\r\n";
+            
+            _http_response.set_status_code(401);
+            _http_response.add_header("Content-Type", "text/html");
+            _http_response.set_body(body);
+            
+            _response_flag = true;
+            ERROR_LOG.logging(__FILE__, __LINE__, "AUTHORIZATION-REQUIRED", _http_request.get_path());
         }
         
         //
