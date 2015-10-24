@@ -161,7 +161,8 @@ class Http : public HttpBase
                 return;
             }
             
-            if (path_not_found())
+            if (path_not_found() && 
+                _http_request.get_method() != HttpMethod::put)
             {
                 not_found();
                 return;
@@ -187,7 +188,7 @@ class Http : public HttpBase
                 
                 // PUT
                 case HttpMethod::put:
-                    success = false;
+                    success = put_file();
                     break;
                 
                 // POST
@@ -304,6 +305,37 @@ class Http : public HttpBase
                 return true;
             } 
             catch (ServeFileException e)
+            {
+                ERROR_LOG.logging(e.filename, e.line_num, e.error_type, e.error_info);
+                return false;
+            }
+        }
+        
+        //
+        // 上传文件，PUT方法调用
+        // 执行成功返回true，否则为false
+        //
+        bool put_file()
+        {
+            try
+            {
+                std::ofstream f;
+                f.open(HttpBase::HTTP_ROOT_DIR + _http_request.get_path());
+                if (!f)
+                    throw PutFileException(__FILE__, __LINE__, 
+                        "PUT-FILE-OPEN-ERROR", _http_request.get_path());
+                
+                // put file
+                f << _http_request.body();
+                
+                string url("http://");
+                url += _http_request.get_header("Host");
+                url += _http_request.get_path();
+                _http_response.set_body(url);
+                
+                return true;
+            }
+            catch (PutFileException e)
             {
                 ERROR_LOG.logging(e.filename, e.line_num, e.error_type, e.error_info);
                 return false;
@@ -552,7 +584,7 @@ class Http : public HttpBase
             string body("");
              
             body += "<HTML><HEAD><TITLE>HTTP-Internal Server Error</TITLE></HEAD>\r\n";
-            body += "<BODY><P>HTTP-Internal Server Error.</P>\r\n";
+            body += "<BODY><P>500 HTTP-Internal Server Error.</P>\r\n";
             body += "</BODY></HTML>\r\n";
             
             _http_response.set_status_code(500);

@@ -37,6 +37,16 @@ class ServeFileException : public BaseException
             }
 };
 
+class PutFileException : public BaseException 
+{
+    public:
+        PutFileException(const string& f, int l, 
+            const string& et, const string& ei):
+                BaseException(f, l, et, ei)
+            {
+            }
+};
+
 class ExecuteCGIException : public BaseException 
 {
     public:
