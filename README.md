@@ -1,14 +1,7 @@
 minihttpd
 ========
 
-##索引
-
-* [基本介绍](base)
-* [基本使用](base usage)
-* [详细使用](advance usage)
-
-[base]:
-##基本介绍
+## About
 基于c++11和Linux socket API实现的http服务器
 
 1. 实现了基本的http方法：GET，HEAD，POST，PUT
@@ -17,8 +10,7 @@ minihttpd
 4. 可指定底层的IO复用模块（Select、Poll、Epoll）
 5. 作为工具实现的有Base64编码、Logger日志、Trie树（用来快速判断一个url是否需要认证）等等。
 
-[base usage]:
-## 基本使用
+## Basic Usage
 ```c++
 #include "../include/EventLoop/EventLoop.h"
 #include "../include/EventLoop/IOMultiplexing.h"
@@ -35,8 +27,7 @@ int main()
 }
 ```
 
-[advance usage]:
-## 详细使用
+## Advanced Usage
 ```
 #include "../include/EventLoop/EventLoop.h"
 #include "../include/EventLoop/IOMultiplexing.h"
