@@ -3,19 +3,19 @@ minihttpd
 
 ##索引
 
-* [基本介绍][base]
-* [基本使用][base usage]
-* [详细使用][advance usage]
+* [基本介绍](base)
+* [基本使用](base usage)
+* [详细使用](advance usage)
 
 [base]:
 ##基本介绍
 基于c++11和Linux socket API实现的http服务器
 
-* 实现了基本的http方法：GET，HEAD，POST，PUT
-* 后端执行CGI程序
-* http认证：基本认证、摘要认证（未实现）
-* 可指定底层的IO复用模块（Select、Poll、Epoll）
-* 作为工具实现的有Base64编码、Logger日志、Trie树（用来快速判断一个url是否需要认证）等等。
+1. 实现了基本的http方法：GET，HEAD，POST，PUT
+2. 后端执行CGI程序
+3. http认证：基本认证、摘要认证（未实现）
+4. 可指定底层的IO复用模块（Select、Poll、Epoll）
+5. 作为工具实现的有Base64编码、Logger日志、Trie树（用来快速判断一个url是否需要认证）等等。
 
 [base usage]:
 ## 基本使用
