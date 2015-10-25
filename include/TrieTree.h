@@ -3,17 +3,6 @@
 // Author: Dinosaur W.
 //
 
-//
-// Trie树
-//
-// 用来支持Http协议的认证功能
-// 给定一个资源的url，需要快速判断这个资源是否是在那些需要认证的目录之下
-// 例如假设目录a需要认证，那么访问目录a之下的所有文件都需要认证
-// 于是转换成需找字符串寻找前缀的问题
-// 
-// 用Trie树优点是多模式匹配速度快，但内存消耗大
-//
-
 #ifndef TRIETREE_H
 #define TRIETREE_H
 
@@ -24,6 +13,17 @@
 using std::string;
 using std::vector;
 using std::unordered_map;
+
+//
+// Trie树
+//
+// 用来支持Http协议的认证功能
+// 给定一个资源的url，需要快速判断这个资源是否是在那些需要认证的目录之下
+// 例如假设目录a需要认证，那么访问目录a之下的所有文件都需要认证
+// 于是转换成需找字符串寻找前缀的问题
+// 
+// 用Trie树优点是多模式匹配速度快，但内存消耗大
+//
 
 template <typename T>
 class TrieTreeNote

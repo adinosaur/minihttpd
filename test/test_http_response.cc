@@ -3,7 +3,7 @@
 // Author: Dinosaur W.
 //
 
-#include "../src/include/HttpResponse.h"
+#include "../include/HttpResponse.h"
 
 #include <assert.h>
 

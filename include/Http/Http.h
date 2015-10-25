@@ -8,11 +8,12 @@
 
 #include "../Exception.h"
 #include "../StrTime.h"
-#include "../Logger/Logger.h"
+#include "../Logger.h"
 #include "../Noncopyable.h"
 #include "../Helper.h"
 #include "HttpRequest.h"
 #include "HttpResponse.h"
+#include "HttpAuthorization.h"
 
 #include <unistd.h>
 #include <assert.h>
@@ -172,7 +173,7 @@ class Http : public HttpBase
             }
 
             // 认证
-            if ()
+            if (_http_authorization != nullptr)
             {
                 if (!do_authorization())
                 {
@@ -269,7 +270,24 @@ class Http : public HttpBase
         //
         bool do_authorization()
         {
+            assert(_http_authorization != nullptr);
+            auto* user_passwd = _http_authorization->check(_http_request.get_path());
             
+            // 不需要认证
+            if (user_passwd == nullptr)
+                return true;
+
+            string auth_message = _http_request.get_header("Authorization");
+            if (auth_message.empty())
+            {
+                string auth_method = _http_authorization->auth_name();
+                string auth_field = auth_method + "realm=\"" + user_passwd->path + "\"";
+                _http_response.add_header("www-Authenticate", auth_field);
+                return false;
+            }
+            
+            // _http_authorization->auth是虚函数
+            return _http_authorization->auth(auth_message, *user_passwd);
         }
         
         //
@@ -671,6 +689,14 @@ class Http : public HttpBase
             _response_flag = true;
         }
         
+        //
+        // 设置Http认证模块
+        //
+        static void set_auth(HttpAuthorization* auth)
+        {
+            _http_authorization = auth;
+        }
+        
     private:
         int _connfd;
         
@@ -679,7 +705,11 @@ class Http : public HttpBase
         
         HttpRequest _http_request;
         HttpResponse _http_response;
+        
+        static HttpAuthorization* _http_authorization;
 };
+
+HttpAuthorization* Http::_http_authorization = nullptr;
 
 #endif
 

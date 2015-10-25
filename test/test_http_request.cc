@@ -3,7 +3,7 @@
 // Author: Dinosaur W.
 //
 
-#include "../src/include/HttpRequest.h"
+#include "../include/HttpRequest.h"
 
 #include <assert.h>
 #include <ctype.h>

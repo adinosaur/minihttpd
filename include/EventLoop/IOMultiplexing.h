@@ -6,7 +6,7 @@
 #ifndef MINIHTTPD_IOMULTIPLEXING_H
 #define MINIHTTPD_IOMULTIPLEXING_H
 
-#include "../Logger/Logger.h"
+#include "../Logger.h"
 #include "Channel.h"
 
 #include <assert.h>
