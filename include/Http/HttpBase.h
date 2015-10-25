@@ -58,27 +58,6 @@ class HttpBase
 string HttpBase::HTTP_ROOT_DIR = "/var/www";
 
 // http method.
-//enum class HttpBase::HttpMethod = 
-//{ unknown, get, head, put, post };
-
-// http version.
-//enum class HttpBase::HttpVersion = 
-//{ unknown, v09, v10, v11, v20 };
-
-// http status code
-/*
-enum class HttpBase::HttpStatusCode = 
-{ 
-    unknown = 0, 
-    s200 = 200, 
-    s301 = 301, 
-    s400 = 400, 
-    s404 = 404, 
-    s500 = 500, 
-    s501 = 501 
-};*/
-
-// http method.
 map<HttpBase::HttpMethod, string> HttpBase::method_to_str_map = 
 {
     {HttpBase::HttpMethod::unknown, ""},
