@@ -28,7 +28,7 @@ int main()
 ```
 
 ## Advanced Usage
-```
+```c++
 #include "../include/EventLoop/EventLoop.h"
 #include "../include/EventLoop/IOMultiplexing.h"
 #include "../include/Http/Http.h"
