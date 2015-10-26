@@ -13,6 +13,11 @@
 class Base64
 {
     public:
+        std::string encode(const std::string plain)
+        {
+            return encode(plain.data(), plain.data() + plain.size());
+        }
+        
         std::string encode(const char* beg, const char* end)
         {
             std::string ciphertext;

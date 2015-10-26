@@ -280,14 +280,30 @@ class Http : public HttpBase
             string auth_message = _http_request.get_header("Authorization");
             if (auth_message.empty())
             {
-                string auth_method = _http_authorization->auth_name();
-                string auth_field = auth_method + "realm=\"" + user_passwd->path + "\"";
+                HttpAuthorization::AuthMethod m = _http_authorization->auth_method();
+                string auth_field;
+                
+                auth_field += _http_authorization->auth_name();
+                auth_field += ("realm=\"" + user_passwd->path + "\"");
+                
+                switch (m)
+                {
+                    case HttpAuthorization::AuthMethod::basic:
+                        break;
+                    case HttpAuthorization::AuthMethod::digest:
+                        // TODO auth-int
+                        auth_field += ", qop=\"auth\"";
+                        auth_field += ", nonce=\"uvmMi12NRtYpEj9nUQ6AaHx5scPbJF4e\"";
+                        break;
+                }
+                
                 _http_response.add_header("www-Authenticate", auth_field);
                 return false;
             }
             
             // _http_authorization->auth是虚函数
-            return _http_authorization->auth(auth_message, *user_passwd);
+            string method = _http_request.str_method();
+            return _http_authorization->auth(method, auth_message, *user_passwd);
         }
         
         //

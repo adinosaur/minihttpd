@@ -14,7 +14,12 @@ int main()
     Http::set_root_dir("/home/dinosaur/www");
     
     // 设置权限目录
-    BasicAuth auth;
+    // Basic认证
+    //BasicAuth auth;
+    //auth.add("/root", "root", "12345");
+    //Http::set_auth(&auth);
+    
+    DigestAuth auth;
     auth.add("/root", "root", "12345");
     Http::set_auth(&auth);
     

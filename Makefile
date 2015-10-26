@@ -1,15 +1,26 @@
-# dinosaur simple im system makefile.
 
+SRC_DIR = ./src
+TEST_DIR = ./test
+BUILD_DIR = ./build
+INCLUDE_DIR = ./include
+ARG = --std=c++11 -Wall -g
+OBJ = md5.o
 CC = clang++-3.6
+#CC = g++
 
-all:
-	$(CC) --std=c++11 -Wall -g ./src/main.cc -o ./build/httpd.out
+all: $(OBJ)
+	$(CC) $(ARG) $(SRC_DIR)/main.cc $(BUILD_DIR)/$(OBJ) -o $(BUILD_DIR)/httpd.out
 
-tst:
-	#$(CC) --std=c++11 -Wall -g ./test/test_http_request.cc -o ./build/test1.out
-	#$(CC) --std=c++11 -Wall -g ./test/test_http_response.cc -o ./build/test2.out
-	#$(CC) --std=c++11 -Wall -g ./test/test_logger.cc -o ./build/test3.out
-	$(CC) --std=c++11 -Wall -g ./test/test_trie_tree.cc -o ./build/test.out
+tst: $(OBJ)
+	$(CC) $(ARG) $(TEST_DIR)/test_trie_tree.cc -o $(BUILD_DIR)/trie_tree_test.out
+	$(CC) $(ARG) $(TEST_DIR)/test_http_authorization.cc $(BUILD_DIR)/$(OBJ) -o $(BUILD_DIR)/http_authorization_test.out
+	$(CC) $(ARG) $(TEST_DIR)/test_md5.cc $(BUILD_DIR)/$(OBJ) -o $(BUILD_DIR)/md5_test.out
+
+tst_md5: md5.o
+	$(CC) $(ARG) $(TEST_DIR)/test_md5.cc $(BUILD_DIR)/$(OBJ) -o $(BUILD_DIR)/md5_test.out
+
+md5.o:
+	$(CC) $(ARG) -c $(INCLUDE_DIR)/md5/md5.cc -o $(BUILD_DIR)/md5.o
 
 clean:
 	rm ./build/*

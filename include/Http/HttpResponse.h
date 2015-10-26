@@ -17,7 +17,6 @@ using std::string;
 
 //
 // warpper for HTTP response.
-// TODO only support HTTP/1.0 now.
 //
 class HttpResponse : public HttpBase
 {
