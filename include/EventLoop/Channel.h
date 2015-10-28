@@ -11,6 +11,8 @@
 
 //
 // Channel类将fd和Callback函数绑定在一起
+// Channel负责将事件分发给注册在该文件描述符上的CallBack函数
+// Channel并不拥有一个文件描述符，不会在析构时关闭这个文件描述符
 //
 class Channel
 {

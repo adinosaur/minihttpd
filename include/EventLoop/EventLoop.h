@@ -88,8 +88,10 @@ class EventLoop
                     protocol.handle_request();
                     protocol.send_response();
                     
+                    // 关闭TCP连接
                     _iomulti.del_channel(connfd);
                     delete connect_channel;
+                    close(connfd);
                 });
                 
                 // 最后将其添加至_iomulti.ChannelMap
