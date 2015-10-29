@@ -197,7 +197,7 @@ class Http : public HttpBase
                 // GET
                 case HttpMethod::get:
                     if (!_http_request.get_query().empty())
-                        success = execute_cgi();
+                        success = execute_cgi(abs_path);
                     else
                         success = serve_file(abs_path);
                     break;
@@ -205,19 +205,19 @@ class Http : public HttpBase
                 // HEAD
                 case HttpMethod::head:
                     if (!_http_request.get_query().empty())
-                        success = execute_cgi();
+                        success = execute_cgi(abs_path);
                     else
                         success = serve_file(abs_path);
                     break;
                 
                 // PUT
                 case HttpMethod::put:
-                    success = put_file();
+                    success = put_file(abs_path);
                     break;
                 
                 // POST
                 case HttpMethod::post:
-                    success = execute_cgi();
+                    success = execute_cgi(abs_path);
                     break;
                 
                 // unknown method
@@ -432,12 +432,12 @@ class Http : public HttpBase
         // 上传文件，PUT方法调用
         // 执行成功返回true，否则为false
         //
-        bool put_file()
+        bool put_file(const string& path)
         {
             try
             {
                 std::ofstream f;
-                f.open(HttpBase::HTTP_ROOT_DIR + _http_request.get_path());
+                f.open(path);
                 if (!f)
                     throw PutFileException(__FILE__, __LINE__, 
                         "PUT-FILE-OPEN-ERROR", _http_request.get_path());
@@ -463,11 +463,17 @@ class Http : public HttpBase
         // 执行CGI程序
         // 执行成功返回true，否则为false
         //
-        bool execute_cgi()
+        bool execute_cgi(const string& path)
         {
             pid_t pid;
             int cgi_input[2];
             int cgi_output[2];
+            struct stat st;
+            
+            // 文件不能执行，返回false
+            stat(path.data(), &st);
+            if (!(S_IXUSR & st.st_mode))
+                return false;
 
             try
             {
@@ -565,7 +571,7 @@ class Http : public HttpBase
                     
                     waitpid(pid, &status, 0);
                     if (status != 0)
-                        throw ExecuteCGIException(__FILE__, __LINE__, "EXECUTE-CGI", "cgi error");
+                        throw ExecuteCGIException(__FILE__, __LINE__, "EXECUTE-CGI", "cgi_error");
                 }
                 else
                 {
@@ -577,8 +583,6 @@ class Http : public HttpBase
                     
                     // 设置环境变量
                     setenv();
-                    
-                    string path = HttpBase::HTTP_ROOT_DIR + _http_request.get_path();
                     TRACE_LOG.logging(__FILE__, __LINE__, "PATH", path);
                     
                     if (execl(path.data(), path.data(), NULL) == -1)
