@@ -19,6 +19,9 @@ tst: $(OBJ)
 tst_md5: md5.o
 	$(CC) $(ARG) $(TEST_DIR)/test_md5.cc $(BUILD_DIR)/$(OBJ) -o $(BUILD_DIR)/md5_test.out
 
+tst_url:
+	$(CC) $(ARG) $(TEST_DIR)/test_urlcheck.cc $(BUILD_DIR)/$(OBJ) -o $(BUILD_DIR)/url_test.out
+
 md5.o:
 	$(CC) $(ARG) -c $(INCLUDE_DIR)/md5/md5.cc -o $(BUILD_DIR)/md5.o
 

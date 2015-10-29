@@ -7,6 +7,7 @@
 #define MINIHTTPD_HTTP_H
 
 #include "../Exception.h"
+#include "../UrlCheck.h"
 #include "../StrTime.h"
 #include "../Logger.h"
 #include "../Noncopyable.h"
@@ -167,6 +168,13 @@ class Http : public HttpBase
             // Not Found
             if (path_not_found() && 
                 _http_request.get_method() != HttpMethod::put)
+            {
+                not_found();
+                return;
+            }
+            
+            // 检查url，确保不会超出http服务器根目录
+            if (!urlUnderRootDir(_http_request.get_path()))
             {
                 not_found();
                 return;
