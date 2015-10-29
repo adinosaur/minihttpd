@@ -470,13 +470,12 @@ class Http : public HttpBase
             int cgi_output[2];
             struct stat st;
             
-            // 文件不能执行，返回false
-            stat(path.data(), &st);
-            if (!(S_IXUSR & st.st_mode))
-                return false;
-
             try
             {
+                stat(path.data(), &st);
+                if (!(S_IXUSR & st.st_mode))
+                    throw ExecuteCGIException(__FILE__, __LINE__, "STAT", "cannot execute_cgi");
+
                 if (pipe(cgi_input) == -1)
                     throw ExecuteCGIException(__FILE__, __LINE__, "CREATE-PIPE", "cgi_input");
                 
