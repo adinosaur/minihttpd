@@ -44,7 +44,7 @@ class Http : public HttpBase
         
         ~Http()
         {
-            close(_connfd);
+            //close(_connfd);
         }
         
         //
@@ -150,6 +150,7 @@ class Http : public HttpBase
         {
             assert(_request_flag);
             bool success;
+            string abs_path = absolute_path();
             
             // Not Supported
             if (!supported())
@@ -158,15 +159,8 @@ class Http : public HttpBase
                 return;
             }
             
-            // 主页
-            if (_http_request.get_path() == "/")
-            {
-                index();
-                return;
-            }
-            
             // Not Found
-            if (path_not_found() && 
+            if (path_not_found(abs_path) && 
                 _http_request.get_method() != HttpMethod::put)
             {
                 not_found();
@@ -177,6 +171,14 @@ class Http : public HttpBase
             if (!urlUnderRootDir(_http_request.get_path()))
             {
                 not_found();
+                return;
+            }
+            
+            if (is_directory(abs_path))
+            {
+                if (!serve_index())
+                    //server_directory();
+                    index();
                 return;
             }
 
@@ -197,7 +199,7 @@ class Http : public HttpBase
                     if (!_http_request.get_query().empty())
                         success = execute_cgi();
                     else
-                        success = serve_file();
+                        success = serve_file(abs_path);
                     break;
                 
                 // HEAD
@@ -205,7 +207,7 @@ class Http : public HttpBase
                     if (!_http_request.get_query().empty())
                         success = execute_cgi();
                     else
-                        success = serve_file();
+                        success = serve_file(abs_path);
                     break;
                 
                 // PUT
@@ -242,7 +244,7 @@ class Http : public HttpBase
             // 设置body长度
             const string& body = _http_response.get_body();
             if (!body.empty())
-                _http_response.add_header("Content-Length", std::to_string(body.size()));
+                _http_response.add_header("Content-Length", std::to_string(_http_response.get_body().size()));
             
             if (_http_request.get_method() == HttpMethod::head)
                 buf = _http_response.to_string_without_body();
@@ -254,15 +256,35 @@ class Http : public HttpBase
         }
         
         //
-        // 判断请求的文件是否存在
-        // 必须在调用accept_request函数之后调用
+        // 返回资源的绝对路径
         //
-        bool path_not_found()
+        string absolute_path()
+        {
+            return HttpBase::HTTP_ROOT_DIR + _http_request.get_path();
+        }
+        
+        //
+        // 判断请求的是否是目录文件
+        // 必须在调用path_not_found函数之后调用
+        //
+        bool is_directory(const string& path)
         {
             assert(_request_flag);
             
             struct stat st;
-            string path = HttpBase::HTTP_ROOT_DIR + _http_request.get_path();
+            stat(path.data(), &st);
+            return S_ISDIR(st.st_mode);
+        }
+        
+        //
+        // 判断请求的文件是否存在
+        // 必须在调用accept_request函数之后调用
+        //
+        bool path_not_found(const string& path)
+        {
+            assert(_request_flag);
+            
+            struct stat st;
             return stat(path.data(), &st) == -1;
         }
         
@@ -320,15 +342,42 @@ class Http : public HttpBase
         }
         
         //
+        // 返回目录下的index.html文件
+        // 执行成功返回true，否则为false 
+        //
+        bool serve_index()
+        {
+            // 默认搜索顺序
+            std::vector<string> index_list = {"index.html", "index.htm", "home.html"};
+            string abs_path = absolute_path();
+            string file;
+            
+            for (auto filename : index_list)
+            {
+                if (abs_path.back() == '/')
+                    file = abs_path + filename;
+                else
+                    file = abs_path + "/" + filename;
+                
+                if (!path_not_found(file))
+                {
+                    serve_file(file);
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        //
         // 返回静态文件
         // 执行成功返回true，否则为false
         //
-        bool serve_file()
+        bool serve_file(const string& path)
         {
             try
             {
                 char buf[2048];
-                std::ifstream f(HttpBase::HTTP_ROOT_DIR + _http_request.get_path());
+                std::ifstream f(path);
                 
                 if (!f)
                     throw ServeFileException(__FILE__, __LINE__, 
@@ -366,7 +415,6 @@ class Http : public HttpBase
                         break;
                     _http_response.append_to_body(buf, buf + f.gcount());
                 }
-                _http_response.add_header("Content-length", std::to_string(_http_response.get_body().size()));
                 
                 TRACE_LOG.logging(__FILE__, __LINE__, "SUFFIX", suffix);
             
@@ -562,7 +610,7 @@ class Http : public HttpBase
             string http_referer(_http_request.get_header("Referer"));
             string script_name(_http_request.get_path());
             string query_string(_http_request.get_query());
-            //string content_length;
+            string content_length(_http_request.get_header("Content-Length"));
             
             string host(_http_request.get_header("Host"));
             string server_name;
@@ -606,6 +654,9 @@ class Http : public HttpBase
             
             if (!query_string.empty())
                 ::setenv("QUERY_STRING", query_string.data(), 0);
+            
+            if (!content_length.empty())
+                ::setenv("CONTENT_LENGTH", content_length.data(), 0);
         }
         
         //
