@@ -231,6 +231,11 @@ class Http : public HttpBase
             // 添加通用头部
             _http_response.add_header("Date", now.to_string("%a, %d %b %Y %H:%M:%S %Z"));
             
+            // 设置body长度
+            const string& body = _http_response.get_body();
+            if (!body.empty())
+                _http_response.add_header("Content-Length", std::to_string(body.size()));
+            
             if (_http_request.get_method() == HttpMethod::head)
                 buf = _http_response.to_string_without_body();
             else
