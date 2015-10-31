@@ -9,6 +9,7 @@
 #include "../Exception.h"
 #include "../UrlCheck.h"
 #include "../StrTime.h"
+#include "../RandomString.h"
 #include "../Logger.h"
 #include "../Noncopyable.h"
 #include "../Helper.h"
@@ -328,7 +329,7 @@ class Http : public HttpBase
                     case HttpAuthorization::AuthMethod::digest:
                         // TODO auth-int
                         auth_field += ", qop=\"auth\"";
-                        auth_field += ", nonce=\"uvmMi12NRtYpEj9nUQ6AaHx5scPbJF4e\"";
+                        auth_field += (", nonce=\"" + random_string(2 * 60) + "\"");
                         break;
                 }
                 
@@ -531,6 +532,9 @@ class Http : public HttpBase
                         while (rcur > beg && isspace(*rcur))
                             rcur--;
                         
+                        if ( beg >= rcur)
+                            throw ExecuteCGIException(__FILE__, __LINE__, "HEADER-ERROR", "no_key");
+
                         string key(beg, rcur);
                         
                         cur++;
@@ -545,6 +549,9 @@ class Http : public HttpBase
                         while (rcur > beg && isspace(*rcur))
                             rcur--;
                         
+                        if (beg >= rcur)
+                            throw ExecuteCGIException(__FILE__, __LINE__, "HEADER-ERROR", "no_value");
+
                         string val(beg, rcur+1);
                         
                         TRACE_LOG.logging(__FILE__, __LINE__, "KEY", key, "VAL", val);
