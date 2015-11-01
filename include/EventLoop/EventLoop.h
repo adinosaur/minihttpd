@@ -19,17 +19,19 @@
 
 #include <vector>
 #include <memory>
+#include <mutex>
+#include <thread>
 
 //
 // 静多态
 //
-template <typename Protocol, typename IOMulti = Epoll>
+template <typename Protocol, typename IOMulti>
 class EventLoop
 {
     public:
-        explicit EventLoop(uint32_t port):
-            _port(port),
-            _sockfd(setup(_port)),
+        explicit EventLoop(int listenfd, std::mutex* m=nullptr):
+            _sockfd(listenfd),
+            _mutex(m),
             _iomulti(IOMulti()),
             _active_channel_list()
         {
@@ -37,15 +39,33 @@ class EventLoop
         
         ~EventLoop()
         {
-            close(_sockfd);
         }
         
         // 禁止copy
         EventLoop(const EventLoop&) = delete;
         EventLoop& operator=(const EventLoop&) = delete;
-        
+
+        //
+        // 封装::accept
+        //
+        int accept(int fd, struct sockaddr* addr, socklen_t* len)
+        {
+            if (_mutex != nullptr)
+                _mutex->lock();
+            
+            int connfd = ::accept(fd, addr, len);
+            
+            if (_mutex != nullptr)
+                _mutex->unlock();
+            
+            TRACE_LOG.logging(__FILE__, __LINE__, "ACCEPT-THREAD-ID", std::this_thread::get_id());
+            return connfd;
+        }
+
         void loop()
         {
+            TRACE_LOG.logging(__FILE__, __LINE__, "THREAD-ID", std::this_thread::get_id());
+            
             // 用监听文件fd创建Channel对象
             Channel listen_channel(_sockfd);
             
@@ -58,7 +78,7 @@ class EventLoop
                 socklen_t length;
                 
                 // accept
-                int connfd = accept(listen_channel.fd(), (struct sockaddr*)(&cliaddr), &length);
+                int connfd = this->accept(listen_channel.fd(), (struct sockaddr*)(&cliaddr), &length);
                 if (connfd < 0)
                 {
                     ERROR_LOG.logging(__FILE__, __LINE__, "ACCEPT-ERROR");
@@ -119,53 +139,8 @@ class EventLoop
         }
         
     private:
-        //
-        // 初始化，执行:
-        // 1. 创建socket. 2. 将socket绑定IP. 3. 监听
-        // 返回监听的文件描述符
-        //
-        int setup(uint32_t port)
-        {
-            struct sockaddr_in seraddr;
-            
-            // create socket
-            int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-            if (sockfd < 0)
-            {
-                ERROR_LOG.logging(__FILE__, __LINE__, "SOCKET-CREATE-ERROR");
-                exit(1);
-            }
-            
-            int flag = 1;
-            if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)) < 0)
-            {
-                ERROR_LOG.logging(__FILE__, __LINE__, "SET-SOCKET-OPT", "SO_REUSEADDR");
-                exit(1);
-            }
-            
-            // bind
-            bzero(&seraddr, sizeof(seraddr));
-            seraddr.sin_family = AF_INET;
-            seraddr.sin_port = htons(port);
-            seraddr.sin_addr.s_addr = htonl(INADDR_ANY);
-            if (bind(sockfd, (struct sockaddr*)(&seraddr), sizeof(seraddr)) < 0)
-            {
-                ERROR_LOG.logging(__FILE__, __LINE__, "BIND-ERROR");
-                exit(1);
-            }
-            
-            // listen
-            if (listen(sockfd, 5) < 0)
-            {
-                ERROR_LOG.logging(__FILE__, __LINE__, "LISTEN-ERROR");
-                exit(1);
-            }
-            
-            return sockfd;
-        }
-        
-        uint32_t _port;
         int _sockfd;
+        std::mutex* _mutex;
         
         IOMulti _iomulti;
         std::vector<Channel*> _active_channel_list;

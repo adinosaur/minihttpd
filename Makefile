@@ -9,7 +9,7 @@ CC = clang++-3.6
 #CC = g++
 
 all: $(OBJ)
-	$(CC) $(ARG) $(SRC_DIR)/main.cc $(BUILD_DIR)/$(OBJ) -o $(BUILD_DIR)/httpd.out
+	$(CC) $(ARG) $(SRC_DIR)/main.cc $(BUILD_DIR)/$(OBJ) -o $(BUILD_DIR)/httpd.out -lpthread
 
 tst: $(OBJ)
 	$(CC) $(ARG) $(TEST_DIR)/test_trie_tree.cc -o $(BUILD_DIR)/trie_tree_test.out

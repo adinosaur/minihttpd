@@ -31,6 +31,10 @@
 
 using std::string;
 
+//
+// 实现Http协议但不拥有文件描述符
+// 在析构时不能关闭文件描述符(sockfd)
+//
 class Http : public HttpBase
 {
     public:
@@ -45,7 +49,6 @@ class Http : public HttpBase
         
         ~Http()
         {
-            //close(_connfd);
         }
         
         //

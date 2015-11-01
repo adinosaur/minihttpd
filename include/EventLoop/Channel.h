@@ -6,7 +6,6 @@
 #ifndef MINIHTTPD_CHANNEL_H
 #define MINIHTTPD_CHANNEL_H
 
-#include "EventLoop.h"
 #include <functional>
 
 //

@@ -3,6 +3,7 @@
 // Author: Dinosaur W.
 //
 
+#include "../include/TcpServer/TcpServer.h"
 #include "../include/EventLoop/EventLoop.h"
 #include "../include/EventLoop/IOMultiplexing.h"
 #include "../include/Http/Http.h"
@@ -24,12 +25,12 @@ int main()
     Http::set_auth(&auth);
     
     // 创建Http服务器
-    EventLoop<Http> httpServer(8080);
+    TcpServer<Http> httpServer(8080, 4);
     
     // 指定底层IO复用
-    //EventLoop<Http, Epoll> httpServer(8080);
+    //TcpServer<Http, Epoll> httpServer(8080, 4);
     
     // IO循环
-    httpServer.loop();
+    httpServer.run();
     return 0;
 }
