@@ -32,3 +32,6 @@
 
 # core
 core
+
+# test
+*.test

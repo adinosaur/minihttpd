@@ -1,14 +1,86 @@
-//
-// Date: 2015/10/29
-// Author: Dinosaur W.
-//
+#include "Helper.h"
 
-#ifndef MINIHTTPD_URLCHECK_H
-#define MINIHTTPD_URLCHECK_H
-
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <assert.h>
+#include <time.h>
+
+#include <iostream>
+#include <chrono>
 #include <string>
 #include <stack>
+
+
+//
+// 读取一行数据
+//
+int Helper::readline(int fd, char *buf, int size)
+{
+    int n, rc;
+    char c, *ptr;
+    
+    ptr = buf;
+    
+    for (n = 0; n < size-1; ++n)
+    {
+        rc = ::read(fd, &c, 1);
+        if (rc == 1)
+        {
+            if (c == '\n')
+                break;
+            *ptr++ = c;
+        }
+        else if (rc == 0)
+        {
+            break;
+        }
+        else
+        {
+            return -1;
+        }
+    }
+
+    *ptr++ = '\n';
+    *ptr = '\0';
+    
+    //std::cout << (ptr-buf) / sizeof(char*) << std::endl;
+    return (ptr-buf);
+}
+
+//
+// 当前日期字符串
+//
+string Helper::date()
+{
+    char buf[80];
+    time_t rawtime;
+    struct tm * timeinfo;
+    
+    ::time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(buf, 80, "%Y%m%d", timeinfo);
+    
+    return buf;
+}
+
+//
+// 当前时间字符串
+//
+string Helper::time()
+{
+    char buf[80];
+    time_t rawtime;
+    struct tm * timeinfo;
+    
+    ::time(&rawtime);
+    timeinfo = localtime(&rawtime);
+
+    strftime(buf, 80, "%H:%M:%S", timeinfo);
+    
+    return buf;
+}
 
 //
 // 配对自动机,状态转移表
@@ -31,7 +103,7 @@ int Goto[4][3] =
 // 返回url的相对深度
 // 根据状态机计算是否超出根目录
 //
-bool urlUnderRootDir(const std::string& url)
+bool Helper::urlUnderRootDir(const string& url)
 {
     int status = 0;
     std::stack<int> dir_stack;
@@ -74,5 +146,3 @@ bool urlUnderRootDir(const std::string& url)
     
     return true;
 }
-
-#endif

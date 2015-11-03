@@ -6,7 +6,7 @@
 #ifndef MINIHTTPD_EVENTLOOP_H
 #define MINIHTTPD_EVENTLOOP_H
 
-#include "../Logger.h"
+#include "../Base/Logger.h"
 #include "IOMultiplexing.h"
 #include "Channel.h"
 
@@ -57,15 +57,12 @@ class EventLoop
             
             if (_mutex != nullptr)
                 _mutex->unlock();
-            
-            TRACE_LOG.logging(__FILE__, __LINE__, "ACCEPT-THREAD-ID", std::this_thread::get_id());
+
             return connfd;
         }
 
         void loop()
         {
-            TRACE_LOG.logging(__FILE__, __LINE__, "THREAD-ID", std::this_thread::get_id());
-            
             // 用监听文件fd创建Channel对象
             Channel listen_channel(_sockfd);
             
@@ -81,13 +78,13 @@ class EventLoop
                 int connfd = this->accept(listen_channel.fd(), (struct sockaddr*)(&cliaddr), &length);
                 if (connfd < 0)
                 {
-                    ERROR_LOG.logging(__FILE__, __LINE__, "ACCEPT-ERROR");
+                    Logger::instance(Logger::ERROR)->logging(__FILE__, __LINE__, "ACCEPT-ERROR");
                     exit(1);
                 }
                 
                 // logger.
                 inet_ntop(AF_INET, &cliaddr.sin_addr, client_addr, sizeof(client_addr));
-                TRACE_LOG.logging(__FILE__, __LINE__, "NEW-CONNECTION", client_addr, ntohs(cliaddr.sin_port), connfd);
+                Logger::instance(Logger::TRACE)->logging(__FILE__, __LINE__, "NEW-CONNECTION: " + std::string(client_addr) + std::to_string(ntohs(cliaddr.sin_port)));
                 
                 // connect_channel必须是一个堆变量
                 // 且生存期要到调用connect_channel中的callback中的del_channel(connfd)

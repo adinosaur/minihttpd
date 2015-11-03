@@ -7,9 +7,7 @@
 #define MINIHTTPD_TCPSERVER_H
 
 #include "../EventLoop/EventLoop.h"
-
 #include <unistd.h>
-
 #include <functional>
 #include <vector>
 #include <thread>
@@ -80,14 +78,14 @@ class TcpServer
             int sockfd = socket(AF_INET, SOCK_STREAM, 0);
             if (sockfd < 0)
             {
-                ERROR_LOG.logging(__FILE__, __LINE__, "SOCKET-CREATE-ERROR");
+                Logger::instance(Logger::ERROR)->logging(__FILE__, __LINE__, "SOCKET-CREATE-ERROR");
                 exit(1);
             }
             
             int flag = 1;
             if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)) < 0)
             {
-                ERROR_LOG.logging(__FILE__, __LINE__, "SET-SOCKET-OPT", "SO_REUSEADDR");
+                Logger::instance(Logger::ERROR)->logging(__FILE__, __LINE__, "SET-SOCKET-OPT: SO_REUSEADDR");
                 exit(1);
             }
             
@@ -98,14 +96,14 @@ class TcpServer
             seraddr.sin_addr.s_addr = htonl(INADDR_ANY);
             if (bind(sockfd, (struct sockaddr*)(&seraddr), sizeof(seraddr)) < 0)
             {
-                ERROR_LOG.logging(__FILE__, __LINE__, "BIND-ERROR");
+                Logger::instance(Logger::ERROR)->logging(__FILE__, __LINE__, "BIND-ERROR");
                 exit(1);
             }
             
             // listen
             if (listen(sockfd, 5) < 0)
             {
-                ERROR_LOG.logging(__FILE__, __LINE__, "LISTEN-ERROR");
+                Logger::instance(Logger::ERROR)->logging(__FILE__, __LINE__, "LISTEN-ERROR");
                 exit(1);
             }
             

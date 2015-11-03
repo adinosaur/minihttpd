@@ -1,6 +1,5 @@
 
-#include "../include/RandomString.h"
-
+#include "../include/Base/Helper.h"
 #include <iostream>
 #include <string>
 
@@ -8,7 +7,7 @@ using namespace std;
 
 void test()
 {
-    cout << random_string(2) << endl;
+    cout << Helper::random_string(2) << endl;
 }
 
 int main(int ac, char** av)
