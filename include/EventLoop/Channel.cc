@@ -1,6 +1,13 @@
 
 #include "Channel.h"
 
+Channel::Channel(int fd):
+    _fd(fd),
+    _enable_reading(false),
+    _enable_writing(false)
+{
+}
+
 void Channel::handle_event()
 {
     if (_enable_reading && _read_callback)

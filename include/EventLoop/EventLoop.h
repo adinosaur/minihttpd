@@ -6,32 +6,20 @@
 #ifndef MINIHTTPD_EVENTLOOP_H
 #define MINIHTTPD_EVENTLOOP_H
 
-#include "../Base/Logger.h"
 #include "IOMultiplexing.h"
 #include "Channel.h"
-
-#include <stdlib.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <unistd.h>
-
 #include <vector>
-#include <memory>
-#include <mutex>
-#include <thread>
+#include <unordered_set>
 
 //
 // 静多态
 //
-template <typename Protocol, typename IOMulti>
+template <typename IOMulti>
 class EventLoop
 {
     public:
-        explicit EventLoop(int listenfd, std::mutex* m=nullptr):
+        explicit EventLoop(int listenfd):
             _sockfd(listenfd),
-            _mutex(m),
             _iomulti(IOMulti()),
             _active_channel_list()
         {
@@ -46,78 +34,23 @@ class EventLoop
         EventLoop& operator=(const EventLoop&) = delete;
 
         //
-        // 封装::accept
+        // 往EventLoop添加事件
         //
-        int accept(int fd, struct sockaddr* addr, socklen_t* len)
+        void add_channel(Channel* channel)
         {
-            if (_mutex != nullptr)
-                _mutex->lock();
-            
-            int connfd = ::accept(fd, addr, len);
-            
-            if (_mutex != nullptr)
-                _mutex->unlock();
+            _iomulti.add_channel(channel->fd(), channel);
+        }
 
-            return connfd;
+        //
+        // 从EventLoop中删除事件
+        //
+        void del_channel(Channel* channel)
+        {
+            _iomulti.del_channel(channel->fd());
         }
 
         void loop()
         {
-            // 用监听文件fd创建Channel对象
-            Channel listen_channel(_sockfd);
-            
-            // 设置新连接到时的处理函数
-            listen_channel.set_enable_reading();
-            listen_channel.set_read_callback([=]()
-            {
-                char client_addr[32];
-                struct sockaddr_in cliaddr;
-                socklen_t length;
-                
-                // accept
-                int connfd = this->accept(listen_channel.fd(), (struct sockaddr*)(&cliaddr), &length);
-                if (connfd < 0)
-                {
-                    Logger::instance(Logger::ERROR)->logging(__FILE__, __LINE__, "ACCEPT-ERROR");
-                    exit(1);
-                }
-                
-                // logger.
-                inet_ntop(AF_INET, &cliaddr.sin_addr, client_addr, sizeof(client_addr));
-                Logger::instance(Logger::TRACE)->logging(__FILE__, __LINE__, "NEW-CONNECTION: " + std::string(client_addr) + std::to_string(ntohs(cliaddr.sin_port)));
-                
-                // connect_channel必须是一个堆变量
-                // 且生存期要到调用connect_channel中的callback中的del_channel(connfd)
-                // 因此不使用智能指针，改用原始的指针和new创建对象
-                // connect_channel的析构在其回调函数完成
-                
-                // 对于每一个新建立的连接
-                // 用该连接的fd创建Channel对象
-                Channel* connect_channel = new Channel(connfd);
-                
-                // 并设置read的Callback
-                connect_channel->set_enable_reading();
-                connect_channel->set_read_callback([=]()
-                {
-                    Protocol protocol(connfd);
-                    
-                    protocol.accept_request();
-                    protocol.handle_request();
-                    protocol.send_response();
-                    
-                    // 关闭TCP连接
-                    _iomulti.del_channel(connfd);
-                    delete connect_channel;
-                    close(connfd);
-                });
-                
-                // 最后将其添加至_iomulti.ChannelMap
-                _iomulti.add_channel(connfd, connect_channel);
-            });
-            
-            // 添加至_iomulti.ChannelMap.
-            _iomulti.add_channel(_sockfd, &listen_channel);
-            
             while (1)
             {
                 // IO复用
@@ -137,7 +70,6 @@ class EventLoop
         
     private:
         int _sockfd;
-        std::mutex* _mutex;
         
         IOMulti _iomulti;
         std::vector<Channel*> _active_channel_list;

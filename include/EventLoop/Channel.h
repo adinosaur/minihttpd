@@ -18,12 +18,7 @@ class Channel
     public:
         typedef std::function<void()> EventCallback;
         
-        explicit Channel(int fd):
-            _fd(fd),
-            _enable_reading(false),
-            _enable_writing(false)
-        {
-        }
+        Channel(int fd);
         
         void handle_event();
         int fd() const;

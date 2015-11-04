@@ -113,7 +113,7 @@ void Http::accept_request()
     }
     
     _request_flag = true;
-    _http_request.print(std::cout);
+    //_http_request.print(std::cout);
 }
 
 //
@@ -225,7 +225,7 @@ void Http::send_response()
         buf = _http_response.to_string();
     
     write(_connfd, buf.data(), buf.size());
-    _http_response.print(std::cout);
+    //_http_response.print(std::cout);
 }
 
 //
