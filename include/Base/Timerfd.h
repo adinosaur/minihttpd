@@ -6,20 +6,21 @@
 #ifndef MINIHTTPD_TIMERFD_H
 #define MINIHTTPD_TIMERFD_H
 
-#include <sys/timerfd.h>
-#include <string.h>
-#include <time.h>
-
-int Timerfd(int second)
+//
+// 管理timerfd
+//
+class Timerfd
 {
-    struct itimerspec howlong;
+    public:
+        Timerfd(int second);
+        ~Timerfd();
+        
+        int fd();
+    private:
+        int timerfd_create(int second);
+        
+        int _timerfd;
+};
 
-    int timerfd = ::timerfd_create(CLOCK_REALTIME, 0);
-    
-    bzero(&howlong, sizeof(howlong));
-    howlong.it_value.tv_sec = second;
-    ::timerfd_settime(timerfd, 0, &howlong, NULL);
 
-    return timerfd;
-}
 #endif

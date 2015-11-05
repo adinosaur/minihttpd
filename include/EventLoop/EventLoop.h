@@ -6,10 +6,12 @@
 #ifndef MINIHTTPD_EVENTLOOP_H
 #define MINIHTTPD_EVENTLOOP_H
 
+#include "../TcpServer/TcpConnection.h"
+#include "../Base/Logger.h"
 #include "IOMultiplexing.h"
 #include "Channel.h"
 #include <vector>
-#include <unordered_set>
+#include <list>
 
 //
 // 静多态
@@ -39,6 +41,8 @@ class EventLoop
         void add_channel(Channel* channel)
         {
             _iomulti.add_channel(channel->fd(), channel);
+            Logger::instance(Logger::TRACE)->logging(__FILE__, __LINE__, 
+                "CHANNEL-ADD-IN-EVENTLOOP:" + std::to_string(channel->fd()));
         }
 
         //
@@ -47,25 +51,27 @@ class EventLoop
         void del_channel(Channel* channel)
         {
             _iomulti.del_channel(channel->fd());
+            Logger::instance(Logger::TRACE)->logging(__FILE__, __LINE__, 
+                "CHANNEL-REMOVE-FROM-EVENTLOOP:" + std::to_string(channel->fd()));
         }
 
+        //
+        // 事件循环
+        //
         void loop()
         {
-            while (1)
-            {
-                // IO复用
-                // 通过IO复用获取到IO事件
-                _iomulti.loop(_active_channel_list);
-                
-                // swap技法清空vector
-                std::vector<Channel*> channel_list;
-                channel_list.swap(_active_channel_list);
-                
-                // 消息分发
-                // 将获得的IO事件分发给各个文件描述符的事件处理函数
-                for (auto channel : channel_list)
-                    channel->handle_event();
-            }
+            // IO复用
+            // 通过IO复用获取到IO事件
+            _iomulti.loop(_active_channel_list);
+            
+            // swap技法清空vector
+            std::vector<Channel*> channel_list;
+            channel_list.swap(_active_channel_list);
+            
+            // 消息分发
+            // 将获得的IO事件分发给各个文件描述符的事件处理函数
+            for (auto channel : channel_list)
+                channel->handle_event();
         }
         
     private:

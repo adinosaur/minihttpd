@@ -1,5 +1,7 @@
 #include "Logger.h"
 #include <assert.h>
+#include <pthread.h>
+#include <string>
 
 using namespace std;
 
@@ -67,11 +69,15 @@ void Logger::logging(const string& file, int line, const string& content)
         msg.append(Helper::time());
         msg.push_back(seperator);
         
+        msg.append(std::to_string(pthread_self()));
+        msg.push_back(seperator);
+        
         msg.append(strLevel());
         msg.push_back(seperator);
 
         msg.append(content);
         
+        msg.push_back(seperator);
         msg.append(file);
         msg.push_back(':');
         msg.append(std::to_string(line));
