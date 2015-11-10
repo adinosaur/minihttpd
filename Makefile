@@ -4,16 +4,12 @@ TEST_DIR = ./test
 BUILD_DIR = ./build
 INCLUDE_DIR = ./include
 ARG = --std=c++11 -Wall -g
-OBJ = logger.o tcpConnection.o md5.o helper.o timerfd.o base64.o strTime.o http.o httpBase.o httpAuthorization.o httpRequest.o httpResponse.o iomultiplexing.o channel.o randomString.o
+OBJ = logger.o md5.o helper.o timerfd.o base64.o strTime.o http.o httpBase.o httpAuthorization.o httpRequest.o httpResponse.o iomultiplexing.o channel.o randomString.o
 CC = clang++-3.6
 #CC = g++
 
 all: $(OBJ)
 	$(CC) $(ARG) $(SRC_DIR)/main.cc $(BUILD_DIR)/*.o -o $(BUILD_DIR)/httpd.out -lpthread
-
-# TcpConnection模块
-tcpConnection.o:
-	$(CC) $(ARG) -c $(INCLUDE_DIR)/TcpServer/TcpConnection.cc -o $(BUILD_DIR)/tcpConnection.o
 
 # Timerfd模块
 timerfd.o:

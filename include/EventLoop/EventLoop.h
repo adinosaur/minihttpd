@@ -6,7 +6,6 @@
 #ifndef MINIHTTPD_EVENTLOOP_H
 #define MINIHTTPD_EVENTLOOP_H
 
-#include "../TcpServer/TcpConnection.h"
 #include "../Base/Logger.h"
 #include "IOMultiplexing.h"
 #include "Channel.h"

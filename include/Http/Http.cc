@@ -24,6 +24,16 @@
 HttpAuthorization* Http::_http_authorization = nullptr;
 
 //
+// 使用者唯一依赖的方法
+//
+void Http::handle()
+{
+    accept_request();
+    handle_request();
+    send_response();
+}
+
+//
 // 接收请求
 //
 void Http::accept_request()

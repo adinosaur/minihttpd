@@ -9,7 +9,6 @@
 #include "../EventLoop/EventLoop.h"
 #include "../Base/Logger.h"
 #include "../Base/Timerfd.h"
-#include "TcpConnection.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -17,7 +16,6 @@
 #include <arpa/inet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/timerfd.h>
 
 #include <functional>
 #include <vector>
@@ -32,7 +30,7 @@ template <typename Protocol, typename IOMulti = Epoll>
 class TcpServer
 {
     public:
-        typedef std::list<TcpConnection*> TcpConnectionList;
+        typedef std::function<void()> CallBack;
         
         TcpServer(uint32_t port, int threads):
             _port(port),
@@ -117,11 +115,9 @@ class TcpServer
         //
         void handle(int connfd)
         {
-            Logger::instance(Logger::INFO)->logging(__FILE__, __LINE__, "NEW-REQUEST");
+            Logger::instance(Logger::INFO)->logging(__FILE__, __LINE__, "NEW-REQUEST:" + std::to_string(connfd));
             Protocol protocol(connfd);
-            protocol.accept_request();
-            protocol.handle_request();
-            protocol.send_response();
+            protocol.handle();
         }
         
         //
@@ -135,7 +131,7 @@ class TcpServer
             for(int i = 0; i != _threads; ++i)
             {
                 auto eventloop = new EventLoop<IOMulti>(_sockfd);
-                _connection_list[eventloop] = std::list<TcpConnection*>();
+                _closing_list[eventloop] = std::list<Channel*>();
                 
                 listen_channel(_sockfd, eventloop);
                 _eventloops.push_back(eventloop);
@@ -161,40 +157,6 @@ class TcpServer
         }
         
         //
-        // 工作Channel
-        //
-        void working_channel(int connfd, TcpConnection* tcpConnection, EventLoop<IOMulti>* eventloop)
-        {
-            Channel* channel = new Channel(connfd);
-            channel->set_enable_reading();
-            channel->set_read_callback([=]()
-            {
-                handle(channel->fd());
-            });
-            eventloop->add_channel(channel);
-            tcpConnection->set_channel(channel);
-        }
-        
-        //
-        // 计时器Channel
-        //
-        void timer_channel(TcpConnection* tcpConnection, EventLoop<IOMulti>* eventloop)
-        {
-            Timerfd* timer = new Timerfd(10);
-            Channel* channel = new Channel(timer->fd());
-            channel->set_enable_reading();
-            channel->set_read_callback([=]()
-            {
-                tcpConnection->set_timeout();
-                
-                eventloop->del_channel(channel);
-                delete timer;
-                delete channel;
-            });
-            eventloop->add_channel(channel);
-        }
-        
-        //
         // 监听Channel
         //
         void listen_channel(int listenfd, EventLoop<IOMulti>* eventloop)
@@ -210,13 +172,34 @@ class TcpServer
                 // accept
                 int connfd = this->accept(channel->fd(), (struct sockaddr*)(&cliaddr), &length);
                 inet_ntop(AF_INET, &cliaddr.sin_addr, client_addr, sizeof(client_addr));
+                Logger::instance(Logger::INFO)->logging(__FILE__, __LINE__, 
+                    "NEW-CONNECTION:" + std::to_string(connfd) + ":" + client_addr + ":" + std::to_string(cliaddr.sin_port));
 
-                // TcpConnection管理tcp连接
-                TcpConnection* tcpConnection = new TcpConnection(connfd, client_addr, ntohs(cliaddr.sin_port));
-                _connection_list[eventloop].push_back(tcpConnection);
+                // 计时器fd
+                int timerfd = Timerfd_create(10);
                 
-                timer_channel(tcpConnection, eventloop);
-                working_channel(connfd, tcpConnection, eventloop);
+                // TCP连接Channel
+                Channel* connect_channel = new Channel(connfd);
+                connect_channel->set_enable_reading();
+                connect_channel->set_read_callback([=]()
+                {
+                    handle(connfd);
+                });
+                eventloop->add_channel(connect_channel);
+                
+                // 计时器Channel
+                Channel* timer_channel = new Channel(timerfd);
+                timer_channel->set_enable_reading();
+                timer_channel->set_read_callback([=]()
+                {
+                    _closing_list[eventloop].push_back(connect_channel);
+                    _closing_list[eventloop].push_back(timer_channel);
+                    
+                    Logger::instance(Logger::INFO)->logging(__FILE__, __LINE__, 
+                        "CONNECTION-CLOSE:" + std::to_string(connfd));
+                });
+                eventloop->add_channel(timer_channel);
+
             });
             eventloop->add_channel(channel);
         }
@@ -229,30 +212,29 @@ class TcpServer
             while (1)
             {
                 eventloop->loop();
-                clean_timeout_connection(eventloop);
+                clean_channel(eventloop);
             }
         }
         
         //
         // 删除TimeOut的tcp连接
         //
-        void clean_timeout_connection(EventLoop<IOMulti>* eventloop)
+        void clean_channel(EventLoop<IOMulti>* eventloop)
         {
-            auto it = _connection_list[eventloop].begin();
-            while (it != _connection_list[eventloop].end())
+            for (auto it = _closing_list[eventloop].begin();
+                it != _closing_list[eventloop].end(); )
             {
-                TcpConnection* connection = (*it);
-                if (connection->get_timeout())
-                {
-                    it = _connection_list[eventloop].erase(it);
-                    Channel* channel = connection->get_channel();
-                    
-                    eventloop->del_channel(channel);
-                    delete channel;
-                    delete connection;
-                }
-                else
-                    it++;
+                Channel* channel = (*it);
+                it = _closing_list[eventloop].erase(it);
+                
+                // 注销事件循环
+                eventloop->del_channel(channel);
+                
+                // 关闭文件描述符
+                close(channel->fd());
+                
+                // 回收Channel对象资源
+                delete channel;
             }
         }
         
@@ -261,7 +243,7 @@ class TcpServer
         int _sockfd;
         std::mutex _mutex;
         std::vector<EventLoop<IOMulti>*> _eventloops;
-        std::map<EventLoop<IOMulti>*, std::list<TcpConnection*>> _connection_list;
+        std::map<EventLoop<IOMulti>*, std::list<Channel*>> _closing_list;
 };
 
 #endif

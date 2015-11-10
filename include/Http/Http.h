@@ -32,6 +32,11 @@ class Http : public HttpBase
         }
         
         //
+        // handle
+        //
+        void handle();
+        
+        //
         // get a HttpRequest from socket.
         // storaged in HttpServer::_http_request.
         //
