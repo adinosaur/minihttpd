@@ -369,7 +369,7 @@ bool Http::serve_file(const string& path)
         string suffix;
         
         // get suffix name
-        string path = _http_request.get_path();
+        // string path = _http_request.get_path();
         int i = path.size() - 1;
         while (path[i] != '.' && path[i] != '/')
             i--;
